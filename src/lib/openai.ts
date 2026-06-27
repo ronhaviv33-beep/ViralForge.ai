@@ -1,0 +1,182 @@
+import OpenAI from "openai";
+import { ContentPackSchema, type ContentPack } from "@/lib/content-types";
+
+let client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured.");
+  }
+  if (!client) {
+    client = new OpenAI({ apiKey });
+  }
+  return client;
+}
+
+const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+/**
+ * JSON schema handed to the model so it returns a strictly-typed content pack.
+ */
+const RESPONSE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    hooks: {
+      type: "array",
+      items: { type: "string" },
+      description: "Exactly 10 scroll-stopping hooks.",
+    },
+    instagramCaption: { type: "string" },
+    tiktokCaption: { type: "string" },
+    linkedinPost: { type: "string" },
+    xThread: {
+      type: "array",
+      items: { type: "string" },
+      description: "Each item is one tweet in the thread (5-8 tweets).",
+    },
+    newsletterDraft: { type: "string" },
+    blogOutline: { type: "string" },
+    hashtags: {
+      type: "array",
+      items: { type: "string" },
+      description: "Exactly 20 hashtags, each starting with #.",
+    },
+    ctaOptions: {
+      type: "array",
+      items: { type: "string" },
+      description: "Exactly 5 calls to action.",
+    },
+    contentIdeas: {
+      type: "array",
+      items: { type: "string" },
+      description: "Exactly 10 future content ideas.",
+    },
+    carousel: {
+      type: "array",
+      description: "Exactly 5 carousel slides.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          slide: { type: "number" },
+          title: { type: "string" },
+          body: { type: "string" },
+        },
+        required: ["slide", "title", "body"],
+      },
+    },
+  },
+  required: [
+    "hooks",
+    "instagramCaption",
+    "tiktokCaption",
+    "linkedinPost",
+    "xThread",
+    "newsletterDraft",
+    "blogOutline",
+    "hashtags",
+    "ctaOptions",
+    "contentIdeas",
+    "carousel",
+  ],
+} as const;
+
+function buildSystemPrompt(): string {
+  return [
+    "You are ViralForge, an elite social media strategist and copywriter.",
+    "You turn a single idea, transcript, or block of text into a complete, ready-to-publish content package.",
+    "",
+    "Rules:",
+    "- Keep everything practical and immediately usable. No filler, no fluff, no generic platitudes.",
+    "- Avoid generic content. Be specific, concrete, and grounded in the user's actual input.",
+    "- Strictly match the requested TONE in voice, vocabulary, and energy.",
+    "- Adapt content to each platform's native format, length, and culture.",
+    "- Instagram: punchy, emoji-aware, line breaks, ends with a question or CTA.",
+    "- TikTok: hook-first, conversational, short.",
+    "- LinkedIn: professional, value-dense, scannable short paragraphs, no hashtag spam.",
+    "- X/Twitter thread: each array item is ONE tweet, under 280 characters, the first tweet is the hook.",
+    "- Newsletter: warm subject-line-style opener, skimmable, one clear takeaway.",
+    "- Blog outline: clear H2/H3 structure with bullet points the writer can expand.",
+    "- Hashtags: exactly 20, each starting with '#', a mix of broad and niche, no spaces.",
+    "- Everything must be ready to copy and paste with clear formatting.",
+    "- Return ONLY valid JSON matching the provided schema. Do not include commentary.",
+  ].join("\n");
+}
+
+function buildUserPrompt(
+  text: string,
+  tone: string,
+  platforms: string[]
+): string {
+  return [
+    `TONE: ${tone}`,
+    `TARGET PLATFORMS (emphasize these): ${platforms.join(", ")}`,
+    "",
+    "SOURCE MATERIAL:",
+    '"""',
+    text,
+    '"""',
+    "",
+    "Produce the full content package now. Remember:",
+    "- exactly 10 hooks",
+    "- exactly 20 hashtags",
+    "- exactly 5 CTA options",
+    "- exactly 10 content ideas",
+    "- exactly 5 carousel slides",
+    "- the X thread should be 5-8 tweets, each its own array item.",
+  ].join("\n");
+}
+
+/** Generate a structured content pack from the given input. */
+export async function generateContentPack(
+  text: string,
+  tone: string,
+  platforms: string[]
+): Promise<ContentPack> {
+  const openai = getClient();
+
+  const completion = await openai.chat.completions.create({
+    model: MODEL,
+    temperature: 0.8,
+    messages: [
+      { role: "system", content: buildSystemPrompt() },
+      { role: "user", content: buildUserPrompt(text, tone, platforms) },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "content_pack",
+        strict: true,
+        schema: RESPONSE_SCHEMA,
+      },
+    },
+  });
+
+  const raw = completion.choices[0]?.message?.content;
+  if (!raw) {
+    throw new Error("The AI returned an empty response. Please try again.");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("The AI returned malformed output. Please try again.");
+  }
+
+  const result = ContentPackSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error("The AI output did not match the expected format.");
+  }
+
+  return result.data;
+}
+
+/** Short title for a generation, derived from the input text. */
+export function deriveTitle(text: string): string {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (cleaned.length <= 60) return cleaned || "Untitled generation";
+  return cleaned.slice(0, 57).trimEnd() + "…";
+}

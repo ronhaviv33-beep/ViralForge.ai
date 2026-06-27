@@ -1,0 +1,82 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { getStripe, getPriceId } from "@/lib/stripe";
+
+const bodySchema = z.object({
+  plan: z.enum(["creator", "pro", "agency"]),
+});
+
+function appUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
+
+export async function POST(req: Request) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const parsed = bodySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid plan." }, { status: 400 });
+  }
+
+  const priceId = getPriceId(parsed.data.plan);
+  if (!priceId) {
+    return NextResponse.json(
+      { error: "This plan is not available for purchase yet." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const stripe = getStripe();
+
+    // Ensure the user has a Stripe customer.
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.name ?? undefined,
+        metadata: { userId: user.id },
+      });
+      customerId = customer.id;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { stripeCustomerId: customerId },
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${appUrl()}/dashboard?checkout=success`,
+      cancel_url: `${appUrl()}/pricing?checkout=cancelled`,
+      allow_promotion_codes: true,
+      subscription_data: {
+        metadata: { userId: user.id, plan: parsed.data.plan },
+      },
+      metadata: { userId: user.id, plan: parsed.data.plan },
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    console.error("[stripe/checkout]", err);
+    return NextResponse.json(
+      { error: "Could not start checkout. Please try again." },
+      { status: 500 }
+    );
+  }
+}
