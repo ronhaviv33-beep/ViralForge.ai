@@ -1,43 +1,85 @@
 import Link from "next/link";
-import { Sparkles, History, Zap, Calendar } from "lucide-react";
+import {
+  Sparkles,
+  History,
+  Calendar,
+  Gauge,
+  Clock,
+  MessageSquare,
+  Share2,
+} from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getUsageStatus } from "@/lib/usage";
+import { getDashboardAnalytics } from "@/lib/analytics";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { GenerationCard } from "@/components/dashboard/generation-card";
+import { StatCard } from "@/components/dashboard/stat-card";
 
 export default async function DashboardPage() {
   const user = await requireUser();
   const plan = user.plan as PlanId;
-  const usage = await getUsageStatus(user.id, user.plan);
 
-  const [recent, total] = await Promise.all([
+  const [recent, analytics] = await Promise.all([
     prisma.generation.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
-    prisma.generation.count({ where: { userId: user.id } }),
+    getDashboardAnalytics(user.id, user.plan),
   ]);
 
+  const total = analytics.totalPacks;
   const firstName = user.name?.split(" ")[0];
 
   const stats = [
     {
-      label: "This month",
-      value: usage.unlimited ? `${usage.used}` : `${usage.used}/${usage.limit}`,
+      label: "Generated this month",
+      value: String(analytics.generatedThisMonth),
+      hint: analytics.unlimited
+        ? "Unlimited plan"
+        : `of ${PLANS[plan].limit} on ${PLANS[plan].name}`,
       icon: Calendar,
+      accent: "primary" as const,
     },
     {
-      label: "Total packs",
+      label: "Credits remaining",
+      value: analytics.unlimited
+        ? "Unlimited"
+        : String(analytics.creditsRemaining),
+      hint: analytics.unlimited
+        ? `${PLANS[plan].name} plan`
+        : "Resets at month start",
+      icon: Gauge,
+      accent: "accent" as const,
+    },
+    {
+      label: "Estimated hours saved",
+      value: `${analytics.estimatedHoursSaved}h`,
+      hint: "≈ 2 hours per content pack",
+      icon: Clock,
+      accent: "accent" as const,
+    },
+    {
+      label: "Most used tone",
+      value: analytics.mostUsedTone ?? "—",
+      hint: analytics.mostUsedTone ? "Your go-to voice" : "No data yet",
+      icon: MessageSquare,
+      accent: "primary" as const,
+    },
+    {
+      label: "Most used platform",
+      value: analytics.mostUsedPlatform ?? "—",
+      hint: analytics.mostUsedPlatform ? "Where you create most" : "No data yet",
+      icon: Share2,
+      accent: "primary" as const,
+    },
+    {
+      label: "Total content packs",
       value: String(total),
+      hint: "All time",
       icon: History,
-    },
-    {
-      label: "Current plan",
-      value: PLANS[plan].name,
-      icon: Zap,
+      accent: "primary" as const,
     },
   ];
 
@@ -60,18 +102,16 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
-          <div
+          <StatCard
             key={stat.label}
-            className="rounded-xl border border-border bg-card p-5"
-          >
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <stat.icon className="h-4 w-4" />
-              {stat.label}
-            </div>
-            <p className="mt-2 text-2xl font-bold">{stat.value}</p>
-          </div>
+            label={stat.label}
+            value={stat.value}
+            hint={stat.hint}
+            icon={stat.icon}
+            accent={stat.accent}
+          />
         ))}
       </div>
 
