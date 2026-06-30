@@ -16,72 +16,87 @@ function getClient(): OpenAI {
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
+/** Maps each platform name to its ContentPack field. */
+const PLATFORM_FIELD_MAP: Record<string, string> = {
+  Instagram: "instagramCaption",
+  TikTok: "tiktokCaption",
+  LinkedIn: "linkedinPost",
+  "X / Twitter": "xThread",
+  Newsletter: "newsletterDraft",
+  Blog: "blogOutline",
+};
+
+/** JSON schema shapes for each platform-specific field. */
+const PLATFORM_FIELD_SCHEMAS: Record<string, object> = {
+  instagramCaption: { type: "string" },
+  tiktokCaption: { type: "string" },
+  linkedinPost: { type: "string" },
+  xThread: {
+    type: "array",
+    items: { type: "string" },
+    description: "Each item is one tweet in the thread (5-8 tweets).",
+  },
+  newsletterDraft: { type: "string" },
+  blogOutline: { type: "string" },
+};
+
 /**
- * JSON schema handed to the model so it returns a strictly-typed content pack.
+ * Builds an OpenAI response schema that only includes the selected platforms.
+ * Universal sections (hooks, hashtags, CTAs, content ideas, carousel) are always included.
  */
-const RESPONSE_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    hooks: {
-      type: "array",
-      items: { type: "string" },
-      description: "Exactly 10 scroll-stopping hooks.",
-    },
-    instagramCaption: { type: "string" },
-    tiktokCaption: { type: "string" },
-    linkedinPost: { type: "string" },
-    xThread: {
-      type: "array",
-      items: { type: "string" },
-      description: "Each item is one tweet in the thread (5-8 tweets).",
-    },
-    newsletterDraft: { type: "string" },
-    blogOutline: { type: "string" },
-    hashtags: {
-      type: "array",
-      items: { type: "string" },
-      description: "Exactly 20 hashtags, each starting with #.",
-    },
-    ctaOptions: {
-      type: "array",
-      items: { type: "string" },
-      description: "Exactly 5 calls to action.",
-    },
-    contentIdeas: {
-      type: "array",
-      items: { type: "string" },
-      description: "Exactly 10 future content ideas.",
-    },
-    carousel: {
-      type: "array",
-      description: "Exactly 5 carousel slides.",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          slide: { type: "number" },
-          title: { type: "string" },
-          body: { type: "string" },
+function buildResponseSchema(platforms: string[]) {
+  const platformFields = platforms
+    .map((p) => PLATFORM_FIELD_MAP[p])
+    .filter(Boolean);
+
+  const platformProperties: Record<string, object> = {};
+  for (const field of platformFields) {
+    platformProperties[field] = PLATFORM_FIELD_SCHEMAS[field];
+  }
+
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      hooks: {
+        type: "array",
+        items: { type: "string" },
+        description: "Exactly 10 scroll-stopping hooks.",
+      },
+      ...platformProperties,
+      hashtags: {
+        type: "array",
+        items: { type: "string" },
+        description: "Exactly 20 hashtags, each starting with #.",
+      },
+      ctaOptions: {
+        type: "array",
+        items: { type: "string" },
+        description: "Exactly 5 calls to action.",
+      },
+      contentIdeas: {
+        type: "array",
+        items: { type: "string" },
+        description: "Exactly 10 future content ideas.",
+      },
+      carousel: {
+        type: "array",
+        description: "Exactly 5 carousel slides.",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            slide: { type: "number" },
+            title: { type: "string" },
+            body: { type: "string" },
+          },
+          required: ["slide", "title", "body"],
         },
-        required: ["slide", "title", "body"],
       },
     },
-  },
-  required: [
-    "hooks",
-    "instagramCaption",
-    "tiktokCaption",
-    "linkedinPost",
-    "xThread",
-    "newsletterDraft",
-    "blogOutline",
-    "hashtags",
-    "ctaOptions",
-    "contentIdeas",
-    "carousel",
-  ],
-} as const;
+    required: ["hooks", ...platformFields, "hashtags", "ctaOptions", "contentIdeas", "carousel"],
+  };
+}
 
 function buildSystemPrompt(): string {
   return [
@@ -112,21 +127,25 @@ function buildUserPrompt(
 ): string {
   return [
     `TONE: ${tone}`,
-    `TARGET PLATFORMS (emphasize these): ${platforms.join(", ")}`,
+    `GENERATE CONTENT FOR THESE PLATFORMS ONLY: ${platforms.join(", ")}`,
     "",
     "SOURCE MATERIAL:",
     '"""',
     text,
     '"""',
     "",
-    "Produce the full content package now. Remember:",
+    "Produce the content package now. Remember:",
     "- exactly 10 hooks",
     "- exactly 20 hashtags",
     "- exactly 5 CTA options",
     "- exactly 10 content ideas",
     "- exactly 5 carousel slides",
-    "- the X thread should be 5-8 tweets, each its own array item.",
-  ].join("\n");
+    platforms.includes("X / Twitter")
+      ? "- the X thread should be 5-8 tweets, each its own array item."
+      : "",
+  ]
+    .filter((l) => l !== "")
+    .join("\n");
 }
 
 /** Generate a structured content pack from the given input. */
@@ -136,6 +155,7 @@ export async function generateContentPack(
   platforms: string[]
 ): Promise<ContentPack> {
   const openai = getClient();
+  const schema = buildResponseSchema(platforms);
 
   const completion = await openai.chat.completions.create({
     model: MODEL,
@@ -149,7 +169,7 @@ export async function generateContentPack(
       json_schema: {
         name: "content_pack",
         strict: true,
-        schema: RESPONSE_SCHEMA,
+        schema,
       },
     },
   });

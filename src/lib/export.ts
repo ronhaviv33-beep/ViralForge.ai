@@ -58,6 +58,7 @@ export function packToText(pack: ContentPack, title?: string): string {
     lines.push("");
   }
   for (const key of ORDER) {
+    if (pack[key] === undefined) continue;
     lines.push(SECTION_TITLES[key].toUpperCase());
     lines.push("-".repeat(SECTION_TITLES[key].length));
     lines.push(sectionToText(key, pack));
@@ -73,9 +74,10 @@ export function packToMarkdown(pack: ContentPack, title?: string): string {
   lines.push(`# ViralForge Content Pack${title ? ` — ${title}` : ""}`);
   lines.push("");
   for (const key of ORDER) {
+    const value = pack[key];
+    if (value === undefined) continue;
     lines.push(`## ${SECTION_TITLES[key]}`);
     lines.push("");
-    const value = pack[key];
     if (typeof value === "string") {
       lines.push(value);
     } else if (key === "carousel") {

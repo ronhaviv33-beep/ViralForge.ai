@@ -37,6 +37,7 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
   const [result, setResult] = React.useState<{
     pack: ContentPack;
     title: string;
+    platforms: string[];
   } | null>(null);
 
   function togglePlatform(p: string) {
@@ -73,7 +74,7 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
         }
         return;
       }
-      setResult({ pack: data.output, title: text.trim().slice(0, 60) });
+      setResult({ pack: data.output, title: text.trim().slice(0, 60), platforms });
       toast.success("Content pack generated!");
       router.refresh(); // refresh usage meter
     } catch {
@@ -216,7 +217,7 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
       {/* Results */}
       {result && !loading && (
         <div className="animate-fade-up">
-          <ContentPackView pack={result.pack} title={result.title} />
+          <ContentPackView pack={result.pack} title={result.title} platforms={result.platforms} />
         </div>
       )}
     </div>

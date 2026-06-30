@@ -26,9 +26,27 @@ import {
 interface ContentPackViewProps {
   pack: ContentPack;
   title?: string;
+  /** Selected platforms. Sections for unselected platforms are hidden. */
+  platforms?: string[];
 }
 
-export function ContentPackView({ pack, title }: ContentPackViewProps) {
+export function ContentPackView({ pack, title, platforms }: ContentPackViewProps) {
+  const visibleSections = React.useMemo(
+    () =>
+      SECTIONS.filter((s) => {
+        if (s.platform) {
+          // Platform-specific section: only show when that platform was selected
+          // and the AI actually produced the field.
+          return (
+            (!platforms || platforms.includes(s.platform)) &&
+            pack[s.key] !== undefined
+          );
+        }
+        return true; // universal sections always shown
+      }),
+    [pack, platforms]
+  );
+
   const allText = React.useMemo(() => packToText(pack, title), [pack, title]);
 
   function handleExport(format: "txt" | "md") {
@@ -48,7 +66,7 @@ export function ContentPackView({ pack, title }: ContentPackViewProps) {
         <div>
           <p className="text-sm font-medium">Your content pack is ready</p>
           <p className="text-xs text-muted-foreground">
-            11 sections · copy any block or export the whole pack
+            {visibleSections.length} sections · copy any block or export the whole pack
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -78,7 +96,7 @@ export function ContentPackView({ pack, title }: ContentPackViewProps) {
 
       {/* Sections */}
       <div className="grid gap-5 lg:grid-cols-2">
-        {SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <Card key={section.key} className="flex flex-col">
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
               <div>
