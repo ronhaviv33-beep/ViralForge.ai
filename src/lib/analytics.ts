@@ -57,3 +57,43 @@ export async function getDashboardAnalytics(
     totalPacks: total,
   };
 }
+
+// ─── Analytics page ────────────────────────────────────────────────────────────
+
+export interface RecentGeneration {
+  id: string;
+  title: string;
+  tone: string;
+  platforms: string[];
+  createdAt: Date;
+}
+
+export interface UserAnalytics extends DashboardAnalytics {
+  recentGenerations: RecentGeneration[];
+}
+
+/**
+ * Extends getDashboardAnalytics with a recent-generations list.
+ * Used exclusively by the /dashboard/analytics page.
+ */
+export async function getUserAnalytics(
+  userId: string,
+  plan: Plan
+): Promise<UserAnalytics> {
+  const [base, recentGenerations] = await Promise.all([
+    getDashboardAnalytics(userId, plan),
+    prisma.generation.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        title: true,
+        tone: true,
+        platforms: true,
+        createdAt: true,
+      },
+    }),
+  ]);
+  return { ...base, recentGenerations };
+}
