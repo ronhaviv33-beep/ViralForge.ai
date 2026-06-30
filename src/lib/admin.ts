@@ -50,11 +50,12 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     generationsThisMonth,
     recentUsers,
     recentGenerations,
+    activeSubsByPlan,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { createdAt: { gte: monthStart } } }),
     prisma.user.groupBy({ by: ["plan"], _count: { plan: true } }),
-    prisma.subscription.count({ where: { status: "active" } }),
+    prisma.subscription.count({ where: { status: { in: ["active", "trialing"] } } }),
     prisma.generation.count(),
     prisma.usage.aggregate({
       _sum: { generationCount: true },
@@ -76,10 +77,19 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         user: { select: { email: true } },
       },
     }),
+    prisma.subscription.groupBy({
+      by: ["plan"],
+      where: { status: { in: ["active", "trialing"] } },
+      _count: { plan: true },
+    }),
   ]);
 
   const planCounts = Object.fromEntries(
     usersByPlan.map((g) => [g.plan, g._count.plan])
+  ) as Record<string, number>;
+
+  const subPlanCounts = Object.fromEntries(
+    activeSubsByPlan.map((g) => [g.plan, g._count.plan])
   ) as Record<string, number>;
 
   const paidUsers =
@@ -88,9 +98,9 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     (planCounts["agency"] ?? 0);
 
   const estimatedMrr =
-    (planCounts["creator"] ?? 0) * MRR_BY_PLAN.creator +
-    (planCounts["pro"] ?? 0) * MRR_BY_PLAN.pro +
-    (planCounts["agency"] ?? 0) * MRR_BY_PLAN.agency;
+    (subPlanCounts["creator"] ?? 0) * MRR_BY_PLAN.creator +
+    (subPlanCounts["pro"] ?? 0) * MRR_BY_PLAN.pro +
+    (subPlanCounts["agency"] ?? 0) * MRR_BY_PLAN.agency;
 
   const planBreakdown = (["free", "creator", "pro", "agency"] as PlanId[]).map(
     (p) => ({ plan: PLANS[p].name, count: planCounts[p] ?? 0 })
