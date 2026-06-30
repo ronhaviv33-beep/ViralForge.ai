@@ -19,9 +19,11 @@ export default async function DashboardLayout({
   const plan = user.plan as PlanId;
   const usage = await getUsageStatus(user.id, user.plan);
 
+  const isAdmin = user.role === "ADMIN";
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <MobileNav planLabel={PLANS[plan].name} />
+      <MobileNav planLabel={PLANS[plan].name} isAdmin={isAdmin} />
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-card/40 p-4 md:flex">
@@ -29,7 +31,7 @@ export default async function DashboardLayout({
           <Logo href="/dashboard" />
         </div>
         <div className="mt-6 flex-1">
-          <DashboardNav />
+          <DashboardNav isAdmin={isAdmin} />
         </div>
         <div className="space-y-3">
           <UsageMeter plan={plan} usage={usage} />

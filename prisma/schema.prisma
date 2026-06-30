@@ -17,12 +17,18 @@ enum Plan {
   agency
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
   id               String   @id @default(cuid())
   email            String   @unique
   name             String?
   passwordHash     String
   plan             Plan     @default(free)
+  role             UserRole @default(USER)
   stripeCustomerId String?  @unique
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

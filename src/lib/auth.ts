@@ -76,12 +76,34 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
   const userId = await getSessionUserId();
   if (!userId) return null;
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  return user ? toSafeUser(user) : null;
+  if (!user) return null;
+  const safe = toSafeUser(user);
+  // Bootstrap: promote to ADMIN if email is in PLATFORM_ADMIN_EMAILS env var
+  if (
+    safe.role !== "ADMIN" &&
+    process.env.PLATFORM_ADMIN_EMAILS?.split(",")
+      .map((e) => e.trim().toLowerCase())
+      .includes(safe.email.toLowerCase())
+  ) {
+    await prisma.user.update({
+      where: { id: safe.id },
+      data: { role: "ADMIN" },
+    });
+    safe.role = "ADMIN";
+  }
+  return safe;
 }
 
 /** Throws if there is no authenticated user. Use inside server components / routes. */
 export async function requireUser(): Promise<SafeUser> {
   const user = await getCurrentUser();
   if (!user) throw new Error("UNAUTHORIZED");
+  return user;
+}
+
+/** Throws if the current user is not an ADMIN. Use inside every admin page and admin API route. */
+export async function requireAdminUser(): Promise<SafeUser> {
+  const user = await requireUser();
+  if (user.role !== "ADMIN") throw new Error("FORBIDDEN");
   return user;
 }

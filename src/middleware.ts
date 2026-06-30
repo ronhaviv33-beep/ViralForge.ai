@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED = ["/dashboard", "/settings"];
+const PROTECTED = ["/dashboard", "/settings", "/admin"];
 
 /**
  * Lightweight edge guard: bounce unauthenticated requests to /login before
@@ -25,5 +25,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*"],
+  matcher: ["/dashboard/:path*", "/settings/:path*", "/admin/:path*"],
 };

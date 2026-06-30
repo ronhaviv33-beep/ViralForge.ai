@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Sparkles, History, Settings } from "lucide-react";
+import { LayoutDashboard, Sparkles, History, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
@@ -12,13 +12,22 @@ const ITEMS = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
+const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: ShieldCheck };
+
+export function DashboardNav({
+  onNavigate,
+  isAdmin = false,
+}: {
+  onNavigate?: () => void;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
+  const items = isAdmin ? [...ITEMS, ADMIN_ITEM] : ITEMS;
 
   return (
     <nav className="flex flex-col gap-1">
-      {ITEMS.map((item) => {
-        const active = item.exact
+      {items.map((item) => {
+        const active = "exact" in item && item.exact
           ? pathname === item.href
           : pathname.startsWith(item.href);
         return (

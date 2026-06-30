@@ -6,7 +6,13 @@ import { Logo } from "@/components/logo";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 
-export function MobileNav({ planLabel }: { planLabel: string }) {
+export function MobileNav({
+  planLabel,
+  isAdmin = false,
+}: {
+  planLabel: string;
+  isAdmin?: boolean;
+}) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -26,7 +32,7 @@ export function MobileNav({ planLabel }: { planLabel: string }) {
           <div className="mb-3 text-xs uppercase tracking-wide text-muted-foreground">
             {planLabel} plan
           </div>
-          <DashboardNav onNavigate={() => setOpen(false)} />
+          <DashboardNav onNavigate={() => setOpen(false)} isAdmin={isAdmin} />
           <div className="mt-3 border-t border-border pt-3">
             <LogoutButton />
           </div>
