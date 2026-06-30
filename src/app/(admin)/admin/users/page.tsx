@@ -1,5 +1,5 @@
 import { requireAdminUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getAdminUsersPage } from "@/lib/admin";
 import { PLANS, type PlanId } from "@/lib/plans";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -20,32 +20,7 @@ export default async function AdminUsersPage({
   const query = params.q?.trim() ?? "";
   const planFilter = params.plan ?? "";
 
-  const where = {
-    ...(query
-      ? {
-          OR: [
-            { email: { contains: query, mode: "insensitive" as const } },
-            { name: { contains: query, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-    ...(planFilter ? { plan: planFilter as PlanId } : {}),
-  };
-
-  const users = await prisma.user.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      plan: true,
-      role: true,
-      createdAt: true,
-      _count: { select: { generations: true } },
-    },
-  });
+  const users = await getAdminUsersPage({ query, plan: planFilter });
 
   return (
     <div className="space-y-6">
@@ -98,6 +73,7 @@ export default async function AdminUsersPage({
             <tr className="border-b border-border bg-card/60">
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">User</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Plan</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Sub status</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Role</th>
               <th className="px-4 py-3 text-right font-medium text-muted-foreground">Gens</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Joined</th>
@@ -107,13 +83,16 @@ export default async function AdminUsersPage({
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   No users found.
                 </td>
               </tr>
             ) : (
               users.map((u) => (
-                <tr key={u.id} className="border-b border-border last:border-0 hover:bg-card/60">
+                <tr
+                  key={u.id}
+                  className="border-b border-border last:border-0 hover:bg-card/60"
+                >
                   <td className="px-4 py-3">
                     <div className="font-medium">{u.name ?? "—"}</div>
                     <div className="text-xs text-muted-foreground">{u.email}</div>
@@ -124,6 +103,21 @@ export default async function AdminUsersPage({
                     </span>
                   </td>
                   <td className="px-4 py-3">
+                    {u.subscriptionStatus ? (
+                      <span
+                        className={
+                          u.subscriptionStatus === "active"
+                            ? "rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent"
+                            : "rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground capitalize"
+                        }
+                      >
+                        {u.subscriptionStatus}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
                     {u.role === "ADMIN" ? (
                       <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
                         Admin
@@ -132,7 +126,7 @@ export default async function AdminUsersPage({
                       <span className="text-xs text-muted-foreground">User</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">{u._count.generations}</td>
+                  <td className="px-4 py-3 text-right">{u.generationsCount}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {u.createdAt.toLocaleDateString()}
                   </td>

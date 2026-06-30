@@ -1,5 +1,5 @@
 import { requireAdminUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getAdminUserById } from "@/lib/admin";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -12,32 +12,16 @@ export default async function AdminUserDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  let adminUser;
   try {
-    await requireAdminUser();
+    adminUser = await requireAdminUser();
   } catch {
     redirect("/dashboard");
   }
 
   const { id } = await params;
-
-  const user = await prisma.user.findUnique({
-    where: { id },
-    include: {
-      _count: { select: { generations: true } },
-      subscriptions: { orderBy: { createdAt: "desc" }, take: 1 },
-    },
-  });
-
+  const user = await getAdminUserById(id);
   if (!user) notFound();
-
-  const recentGens = await prisma.generation.findMany({
-    where: { userId: id },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    select: { id: true, title: true, tone: true, platforms: true, createdAt: true },
-  });
-
-  const sub = user.subscriptions[0];
 
   return (
     <div className="space-y-8">
@@ -54,7 +38,7 @@ export default async function AdminUserDetailPage({
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Account info */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <div className="space-y-4 rounded-xl border border-border bg-card p-5">
           <h2 className="font-semibold">Account</h2>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
@@ -67,22 +51,36 @@ export default async function AdminUserDetailPage({
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Total generations</dt>
-              <dd>{user._count.generations}</dd>
+              <dd>{user.generationsCount}</dd>
             </div>
-            {sub && (
+            {user.currentMonthUsage !== null && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Used this month</dt>
+                <dd>{user.currentMonthUsage}</dd>
+              </div>
+            )}
+            {user.stripeCustomerId && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Stripe customer</dt>
+                <dd className="font-mono text-xs">{user.stripeCustomerId}</dd>
+              </div>
+            )}
+            {user.subscription && (
               <>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Stripe sub</dt>
-                  <dd className="font-mono text-xs">{sub.stripeSubscriptionId}</dd>
+                  <dt className="text-muted-foreground">Subscription</dt>
+                  <dd className="font-mono text-xs">
+                    {user.subscription.stripeSubscriptionId}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Sub status</dt>
-                  <dd className="capitalize">{sub.status}</dd>
+                  <dd className="capitalize">{user.subscription.status}</dd>
                 </div>
-                {sub.currentPeriodEnd && (
+                {user.subscription.currentPeriodEnd && (
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Period ends</dt>
-                    <dd>{sub.currentPeriodEnd.toLocaleDateString()}</dd>
+                    <dd>{user.subscription.currentPeriodEnd.toLocaleDateString()}</dd>
                   </div>
                 )}
               </>
@@ -91,7 +89,7 @@ export default async function AdminUserDetailPage({
         </div>
 
         {/* Admin actions */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-5">
+        <div className="space-y-5 rounded-xl border border-border bg-card p-5">
           <h2 className="font-semibold">Admin Actions</h2>
 
           <div className="space-y-2">
@@ -101,7 +99,11 @@ export default async function AdminUserDetailPage({
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Role</label>
-            <AdminRoleToggle userId={user.id} currentRole={user.role} />
+            <AdminRoleToggle
+              userId={user.id}
+              currentRole={user.role}
+              isSelf={adminUser.id === user.id}
+            />
           </div>
         </div>
       </div>
@@ -109,7 +111,7 @@ export default async function AdminUserDetailPage({
       {/* Recent generations */}
       <div>
         <h2 className="mb-4 text-lg font-semibold">Recent generations</h2>
-        {recentGens.length === 0 ? (
+        {user.recentGenerations.length === 0 ? (
           <p className="text-sm text-muted-foreground">No generations yet.</p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border">
@@ -123,12 +125,14 @@ export default async function AdminUserDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {recentGens.map((g) => (
+                {user.recentGenerations.map((g) => (
                   <tr key={g.id} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 font-medium">{g.title}</td>
-                    <td className="px-4 py-3 text-muted-foreground capitalize">{g.tone}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{g.platforms.join(", ")}</td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                    <td className="px-4 py-3 capitalize text-muted-foreground">{g.tone}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {g.platforms.join(", ")}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {g.createdAt.toLocaleDateString()}
                     </td>
                   </tr>

@@ -11,8 +11,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let adminUser;
   try {
-    await requireAdminUser();
+    adminUser = await requireAdminUser();
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -22,6 +23,14 @@ export async function PATCH(
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  }
+
+  // Prevent self-demotion: an admin cannot remove their own ADMIN role.
+  if (id === adminUser.id && parsed.data.role === "USER") {
+    return NextResponse.json(
+      { error: "You cannot remove your own admin role." },
+      { status: 400 }
+    );
   }
 
   const user = await prisma.user.findUnique({ where: { id } });
