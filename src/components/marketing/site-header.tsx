@@ -8,13 +8,16 @@ export function SiteHeader({ isAuthed }: { isAuthed: boolean }) {
       <div className="container flex h-16 items-center justify-between">
         <Logo />
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-          <Link href="/#features" className="hover:text-foreground transition-colors">
+          <Link href="/#features" className="transition-colors hover:text-foreground">
             Features
           </Link>
-          <Link href="/pricing" className="hover:text-foreground transition-colors">
+          <Link href="/#examples" className="transition-colors hover:text-foreground">
+            Examples
+          </Link>
+          <Link href="/pricing" className="transition-colors hover:text-foreground">
             Pricing
           </Link>
-          <Link href="/#how" className="hover:text-foreground transition-colors">
+          <Link href="/#how" className="transition-colors hover:text-foreground">
             How it works
           </Link>
         </nav>

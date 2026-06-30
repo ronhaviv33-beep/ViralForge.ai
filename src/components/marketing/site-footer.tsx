@@ -8,7 +8,7 @@ export function SiteFooter() {
         <div className="flex flex-col items-center gap-2 md:items-start">
           <Logo />
           <p className="text-sm text-muted-foreground">
-            Turn one idea into 30 days of content.
+            The AI content engine built for creators.
           </p>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
