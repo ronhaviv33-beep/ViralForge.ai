@@ -9,12 +9,32 @@ import {
   History,
   Sparkles,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { requireUser } from "@/lib/auth";
 import { getUserAnalytics } from "@/lib/analytics";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { GenerationCard } from "@/components/dashboard/generation-card";
+
+function buildActivityGrid(
+  data: { date: string; count: number }[]
+): { date: string; count: number }[] {
+  const map = new Map(data.map((d) => [d.date, d.count]));
+  return Array.from({ length: 30 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (29 - i));
+    const key = d.toISOString().slice(0, 10);
+    return { date: key, count: map.get(key) ?? 0 };
+  });
+}
+
+function activityColor(count: number) {
+  if (count === 0) return "bg-secondary";
+  if (count <= 2) return "bg-primary/30";
+  if (count <= 5) return "bg-primary/60";
+  return "bg-primary";
+}
 
 export const metadata: Metadata = {
   title: "Analytics — ViralForge",
@@ -94,6 +114,105 @@ export default async function AnalyticsPage() {
           />
         ))}
       </div>
+
+      {/* Last 30 days activity */}
+      {analytics.totalPacks > 0 && (() => {
+        const grid = buildActivityGrid(analytics.last30Days);
+        const total30d = grid.reduce((s, d) => s + d.count, 0);
+        return (
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Last 30 days</h2>
+              <span className="text-sm text-muted-foreground">
+                {total30d} generation{total30d !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="rounded-2xl border border-border bg-card/40 p-4">
+              <div className="flex gap-1">
+                {grid.map(({ date, count }) => (
+                  <div
+                    key={date}
+                    title={`${date}: ${count} generation${count !== 1 ? "s" : ""}`}
+                    className={cn(
+                      "h-6 flex-1 rounded-sm transition-colors",
+                      activityColor(count)
+                    )}
+                  />
+                ))}
+              </div>
+              <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                <span>30 days ago</span>
+                <span>Today</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Platform & Tone breakdowns */}
+      {analytics.totalPacks > 0 && (
+        <div className="grid gap-6 sm:grid-cols-2">
+          {/* Platforms */}
+          <div>
+            <h2 className="mb-4 text-lg font-semibold">Platforms</h2>
+            <div className="rounded-2xl border border-border bg-card/40 p-4 space-y-3">
+              {analytics.platformBreakdown.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data yet.</p>
+              ) : (
+                analytics.platformBreakdown.map(({ platform, count }) => {
+                  const pct = Math.round(
+                    (count / analytics.platformBreakdown[0].count) * 100
+                  );
+                  return (
+                    <div key={platform}>
+                      <div className="mb-1 flex justify-between text-sm">
+                        <span className="font-medium">{platform}</span>
+                        <span className="text-muted-foreground">{count}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-secondary">
+                        <div
+                          className="h-2 rounded-full bg-primary transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Tones */}
+          <div>
+            <h2 className="mb-4 text-lg font-semibold">Tones</h2>
+            <div className="rounded-2xl border border-border bg-card/40 p-4 space-y-3">
+              {analytics.toneBreakdown.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data yet.</p>
+              ) : (
+                analytics.toneBreakdown.map(({ tone, count }) => {
+                  const pct = Math.round(
+                    (count / analytics.toneBreakdown[0].count) * 100
+                  );
+                  return (
+                    <div key={tone}>
+                      <div className="mb-1 flex justify-between text-sm">
+                        <span className="font-medium">{tone}</span>
+                        <span className="text-muted-foreground">{count}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-secondary">
+                        <div
+                          className="h-2 rounded-full bg-accent transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent generations */}
       <div>

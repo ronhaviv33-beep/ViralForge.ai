@@ -70,6 +70,9 @@ export interface RecentGeneration {
 
 export interface UserAnalytics extends DashboardAnalytics {
   recentGenerations: RecentGeneration[];
+  platformBreakdown: { platform: string; count: number }[];
+  toneBreakdown: { tone: string; count: number }[];
+  last30Days: { date: string; count: number }[];
 }
 
 /**
@@ -80,20 +83,61 @@ export async function getUserAnalytics(
   userId: string,
   plan: Plan
 ): Promise<UserAnalytics> {
-  const [base, recentGenerations] = await Promise.all([
-    getDashboardAnalytics(userId, plan),
-    prisma.generation.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        title: true,
-        tone: true,
-        platforms: true,
-        createdAt: true,
-      },
-    }),
-  ]);
-  return { ...base, recentGenerations };
+  const [base, recentGenerations, platformRows, toneGroups, activityRows] =
+    await Promise.all([
+      getDashboardAnalytics(userId, plan),
+      prisma.generation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          title: true,
+          tone: true,
+          platforms: true,
+          createdAt: true,
+        },
+      }),
+      prisma.$queryRaw<Array<{ platform: string; count: bigint }>>`
+        SELECT unnest(platforms) AS platform, COUNT(*) AS count
+        FROM "Generation"
+        WHERE "userId" = ${userId}
+        GROUP BY platform
+        ORDER BY count DESC
+      `,
+      prisma.generation.groupBy({
+        by: ["tone"],
+        where: { userId },
+        _count: { tone: true },
+        orderBy: { _count: { tone: "desc" } },
+      }),
+      prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
+        SELECT DATE("createdAt") AS date, COUNT(*) AS count
+        FROM "Generation"
+        WHERE "userId" = ${userId}
+          AND "createdAt" >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE("createdAt")
+        ORDER BY date ASC
+      `,
+    ]);
+
+  return {
+    ...base,
+    recentGenerations,
+    platformBreakdown: platformRows.map((r) => ({
+      platform: r.platform,
+      count: Number(r.count),
+    })),
+    toneBreakdown: toneGroups.map((r) => ({
+      tone: r.tone,
+      count: r._count.tone,
+    })),
+    last30Days: activityRows.map((r) => ({
+      date:
+        r.date instanceof Date
+          ? r.date.toISOString().slice(0, 10)
+          : String(r.date).slice(0, 10),
+      count: Number(r.count),
+    })),
+  };
 }
