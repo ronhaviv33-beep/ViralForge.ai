@@ -5,6 +5,7 @@ import { generateSchema } from "@/lib/validation";
 import { generateContentPack, deriveTitle } from "@/lib/openai";
 import { getUsageStatus, incrementUsage } from "@/lib/usage";
 import { rateLimit } from "@/lib/rate-limit";
+import { getBrandProfile, formatBrandProfileForPrompt } from "@/lib/brand-profile";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -56,9 +57,12 @@ export async function POST(req: Request) {
 
   const { text, tone, platforms } = parsed.data;
 
+  const brandProfile = await getBrandProfile(user.id);
+  const brandContext = formatBrandProfileForPrompt(brandProfile);
+
   let pack;
   try {
-    pack = await generateContentPack(text, tone, platforms);
+    pack = await generateContentPack(text, tone, platforms, brandContext);
   } catch (err) {
     console.error("[generate] AI error", err);
     const message =

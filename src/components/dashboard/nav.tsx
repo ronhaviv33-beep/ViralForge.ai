@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Sparkles, History, Settings, ShieldCheck, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Sparkles, History, Settings, ShieldCheck, BarChart2, Mic2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/dashboard/generate", label: "Generate", icon: Sparkles },
   { href: "/dashboard/history", label: "History", icon: History },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
+  { href: "/dashboard/brand-voice", label: "Brand Voice", icon: Mic2 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

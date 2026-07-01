@@ -28,6 +28,20 @@ export const generateSchema = z.object({
     .max(PLATFORMS.length),
 });
 
+export const brandProfileSchema = z.object({
+  brandName: z.string().trim().max(100).optional(),
+  audience: z.string().trim().max(400).optional(),
+  defaultTone: z.string().trim().max(50).optional(),
+  sentenceLength: z.string().trim().max(50).optional(),
+  emojiUsage: z.string().trim().max(50).optional(),
+  ctaStyle: z.string().trim().max(150).optional(),
+  contentPillars: z.array(z.string().trim().max(60)).max(10).default([]),
+  vocabulary: z.array(z.string().trim().max(60)).max(30).default([]),
+  primaryPlatforms: z.array(z.string().trim().max(60)).max(10).default([]),
+  notes: z.string().trim().max(1000).optional(),
+});
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type GenerateInput = z.infer<typeof generateSchema>;
+export type BrandProfileFormInput = z.infer<typeof brandProfileSchema>;

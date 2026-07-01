@@ -123,11 +123,19 @@ function buildSystemPrompt(): string {
 function buildUserPrompt(
   text: string,
   tone: string,
-  platforms: string[]
+  platforms: string[],
+  brandContext?: string | null
 ): string {
-  return [
+  const lines = [
     `TONE: ${tone}`,
     `GENERATE CONTENT FOR THESE PLATFORMS ONLY: ${platforms.join(", ")}`,
+  ];
+
+  if (brandContext) {
+    lines.push("", "BRAND VOICE:", brandContext);
+  }
+
+  lines.push(
     "",
     "SOURCE MATERIAL:",
     '"""',
@@ -139,20 +147,22 @@ function buildUserPrompt(
     "- exactly 20 hashtags",
     "- exactly 5 CTA options",
     "- exactly 10 content ideas",
-    "- exactly 5 carousel slides",
-    platforms.includes("X / Twitter")
-      ? "- the X thread should be 5-8 tweets, each its own array item."
-      : "",
-  ]
-    .filter((l) => l !== "")
-    .join("\n");
+    "- exactly 5 carousel slides"
+  );
+
+  if (platforms.includes("X / Twitter")) {
+    lines.push("- the X thread should be 5-8 tweets, each its own array item.");
+  }
+
+  return lines.join("\n");
 }
 
 /** Generate a structured content pack from the given input. */
 export async function generateContentPack(
   text: string,
   tone: string,
-  platforms: string[]
+  platforms: string[],
+  brandContext?: string | null
 ): Promise<ContentPack> {
   const openai = getClient();
   const schema = buildResponseSchema(platforms);
@@ -162,7 +172,7 @@ export async function generateContentPack(
     temperature: 0.8,
     messages: [
       { role: "system", content: buildSystemPrompt() },
-      { role: "user", content: buildUserPrompt(text, tone, platforms) },
+      { role: "user", content: buildUserPrompt(text, tone, platforms, brandContext) },
     ],
     response_format: {
       type: "json_schema",
