@@ -24,6 +24,11 @@ services:
         fromDatabase:
           name: viralforge-db
           property: connectionString
+      - key: DIRECT_URL
+        # Required by Prisma for migrate deploy (bypasses PgBouncer advisory-lock limit).
+        # If using Render's built-in DB: set to the same connection string as DATABASE_URL.
+        # If using Neon: set to your Neon *direct* (non-pooled) connection string.
+        sync: false
       - key: AUTH_SECRET
         generateValue: true
       - key: NEXT_PUBLIC_APP_URL
