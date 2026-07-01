@@ -60,7 +60,7 @@ export default async function GenerationDetailPage({
       </details>
 
       {parsed.success ? (
-        <ContentPackView pack={parsed.data} title={generation.title} platforms={generation.platforms} />
+        <ContentPackView pack={parsed.data} title={generation.title} platforms={generation.platforms} generationId={generation.id} />
       ) : (
         <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           This generation&apos;s data could not be displayed.

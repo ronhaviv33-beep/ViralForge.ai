@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Download, FileText, FileType } from "lucide-react";
+import { Download, FileText, FileType, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import type { ContentPack } from "@/lib/content-types";
 import { SECTIONS } from "@/lib/content-types";
+import type { RegeneratableSection } from "@/lib/validation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,41 +23,80 @@ import {
   downloadFile,
   slugify,
 } from "@/lib/export";
+import { cn } from "@/lib/utils";
 
 interface ContentPackViewProps {
   pack: ContentPack;
   title?: string;
   /** Selected platforms. Sections for unselected platforms are hidden. */
   platforms?: string[];
+  /**
+   * When provided, each section shows a regenerate button.
+   * Must be the persisted generation ID so the server can verify ownership.
+   */
+  generationId?: string;
 }
 
-export function ContentPackView({ pack, title, platforms }: ContentPackViewProps) {
+export function ContentPackView({ pack, title, platforms, generationId }: ContentPackViewProps) {
+  // Track the current pack internally so regenerated sections update in place.
+  const [currentPack, setCurrentPack] = React.useState<ContentPack>(pack);
+  // Per-section loading state — only one section regenerates at a time per key.
+  const [regenerating, setRegenerating] = React.useState<
+    Partial<Record<keyof ContentPack, boolean>>
+  >({});
+
   const visibleSections = React.useMemo(
     () =>
       SECTIONS.filter((s) => {
         if (s.platform) {
-          // Platform-specific section: only show when that platform was selected
-          // and the AI actually produced the field.
           return (
             (!platforms || platforms.includes(s.platform)) &&
-            pack[s.key] !== undefined
+            currentPack[s.key] !== undefined
           );
         }
-        return true; // universal sections always shown
+        return true;
       }),
-    [pack, platforms]
+    [currentPack, platforms]
   );
 
-  const allText = React.useMemo(() => packToText(pack, title), [pack, title]);
+  const allText = React.useMemo(() => packToText(currentPack, title), [currentPack, title]);
 
   function handleExport(format: "txt" | "md") {
     const base = slugify(title ?? "content-pack");
     if (format === "txt") {
-      downloadFile(`${base}.txt`, packToText(pack, title), "text/plain");
+      downloadFile(`${base}.txt`, packToText(currentPack, title), "text/plain");
     } else {
-      downloadFile(`${base}.md`, packToMarkdown(pack, title), "text/markdown");
+      downloadFile(`${base}.md`, packToMarkdown(currentPack, title), "text/markdown");
     }
     toast.success(`Exported as .${format}`);
+  }
+
+  async function handleRegenerate(section: keyof ContentPack) {
+    if (!generationId || regenerating[section]) return;
+
+    setRegenerating((prev) => ({ ...prev, [section]: true }));
+    try {
+      const res = await fetch(
+        `/api/generations/${generationId}/regenerate-section`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to regenerate section.");
+        return;
+      }
+      setCurrentPack((prev) => ({ ...prev, [section]: data.value }));
+      const label = SECTIONS.find((s) => s.key === section)?.label ?? section;
+      toast.success(`${label} regenerated.`);
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setRegenerating((prev) => ({ ...prev, [section]: false }));
+    }
   }
 
   return (
@@ -96,22 +136,47 @@ export function ContentPackView({ pack, title, platforms }: ContentPackViewProps
 
       {/* Sections */}
       <div className="grid gap-5 lg:grid-cols-2">
-        {visibleSections.map((section) => (
-          <Card key={section.key} className="flex flex-col">
-            <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
-              <div>
-                <h3 className="font-semibold">{section.label}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {section.description}
-                </p>
-              </div>
-              <CopyButton value={sectionToText(section.key, pack)} />
-            </CardHeader>
-            <CardContent className="flex-1">
-              <SectionBody section={section.key} pack={pack} />
-            </CardContent>
-          </Card>
-        ))}
+        {visibleSections.map((section) => {
+          const isRegenerating = !!regenerating[section.key];
+          return (
+            <Card key={section.key} className="flex flex-col">
+              <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+                <div>
+                  <h3 className="font-semibold">{section.label}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {section.description}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {generationId && (
+                    <button
+                      onClick={() =>
+                        handleRegenerate(section.key as RegeneratableSection)
+                      }
+                      disabled={isRegenerating}
+                      title={`Regenerate ${section.label}`}
+                      className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors",
+                        "hover:bg-secondary hover:text-foreground disabled:opacity-40"
+                      )}
+                    >
+                      <RefreshCw
+                        className={cn(
+                          "h-3.5 w-3.5",
+                          isRegenerating && "animate-spin"
+                        )}
+                      />
+                    </button>
+                  )}
+                  <CopyButton value={sectionToText(section.key, currentPack)} />
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <SectionBody section={section.key} pack={currentPack} />
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
