@@ -43,7 +43,7 @@ export function formatBrandProfileForPrompt(profile: BrandProfile | null): strin
 
   if (profile.brandName) lines.push(`Brand Name: ${profile.brandName}`);
   if (profile.audience) lines.push(`Target Audience: ${profile.audience}`);
-  if (profile.defaultTone) lines.push(`Preferred Tone: ${profile.defaultTone}`);
+  // defaultTone is intentionally omitted — the generate-time TONE: line takes precedence
   if (profile.sentenceLength) lines.push(`Sentence Length: ${profile.sentenceLength}`);
   if (profile.emojiUsage) lines.push(`Emoji Usage: ${profile.emojiUsage}`);
   if (profile.ctaStyle) lines.push(`CTA Style: ${profile.ctaStyle}`);
