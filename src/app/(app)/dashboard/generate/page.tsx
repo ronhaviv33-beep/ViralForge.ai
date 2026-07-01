@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { getUsageStatus } from "@/lib/usage";
+import { getBrandProfile } from "@/lib/brand-profile";
 import { GenerateForm } from "@/components/dashboard/generate-form";
+import { BrandVoiceCard } from "@/components/dashboard/brand-voice-card";
 
 export const metadata: Metadata = {
   title: "Generate — ViralForge",
@@ -9,7 +11,10 @@ export const metadata: Metadata = {
 
 export default async function GeneratePage() {
   const user = await requireUser();
-  const usage = await getUsageStatus(user.id, user.plan);
+  const [usage, brandProfile] = await Promise.all([
+    getUsageStatus(user.id, user.plan),
+    getBrandProfile(user.id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -19,6 +24,7 @@ export default async function GeneratePage() {
           One idea in, a full multi-platform content package out.
         </p>
       </div>
+      <BrandVoiceCard profile={brandProfile} />
       <GenerateForm canGenerate={usage.canGenerate} />
     </div>
   );
