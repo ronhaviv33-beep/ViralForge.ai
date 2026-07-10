@@ -29,6 +29,7 @@
     "openai": "^4.85.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.17.2",
     "sonner": "^1.7.4",
     "stripe": "^17.6.0",
     "tailwind-merge": "^3.0.1",

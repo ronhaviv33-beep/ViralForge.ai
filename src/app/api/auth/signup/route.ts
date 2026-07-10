@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, createSession } from "@/lib/auth";
 import { signupSchema } from "@/lib/validation";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   // Throttle signups per IP to slow abuse.
@@ -46,6 +48,21 @@ export async function POST(req: Request) {
     });
 
     await createSession(user.id);
+
+    // Non-blocking: send verification email. Failure does not abort signup.
+    const verifyToken = randomBytes(32).toString("hex");
+    prisma.verificationToken
+      .create({
+        data: {
+          userId: user.id,
+          token: verifyToken,
+          type: "EMAIL_VERIFICATION",
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      })
+      .then(() => sendVerificationEmail(user.email, verifyToken))
+      .catch((err: unknown) => console.error("[signup] verification email:", err));
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[signup]", err);

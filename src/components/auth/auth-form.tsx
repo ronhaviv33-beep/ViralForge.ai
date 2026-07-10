@@ -21,6 +21,24 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   const isSignup = mode === "signup";
 
+  // Show one-time feedback toasts from redirect params (verified email, password reset).
+  React.useEffect(() => {
+    if (!isSignup) {
+      const verified = searchParams.get("verified");
+      const reset = searchParams.get("reset");
+      if (verified === "true") {
+        toast.success("Email verified! You can now log in.");
+      } else if (verified === "error") {
+        toast.error("Verification link is invalid or has expired.");
+      }
+      if (reset === "true") {
+        toast.success("Password updated! Log in with your new password.");
+      }
+    }
+    // Run once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -81,7 +99,17 @@ export function AuthForm({ mode }: AuthFormProps) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Password</Label>
+          {!isSignup && (
+            <Link
+              href="/forgot-password"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Forgot password?
+            </Link>
+          )}
+        </div>
         <Input
           id="password"
           name="password"

@@ -47,3 +47,8 @@ services:
         sync: false
       - key: STRIPE_PRICE_AGENCY
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        # e.g. "ViralForge <noreply@yourdomain.com>" — must match a verified Resend sender domain.
+        sync: false
