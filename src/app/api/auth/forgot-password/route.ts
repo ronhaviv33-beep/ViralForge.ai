@@ -9,9 +9,12 @@ export const runtime = "nodejs";
 
 const RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
-const GENERIC_OK = NextResponse.json({
-  message: "If that email exists, a reset link has been sent.",
-});
+// Must be a fresh Response per request — a Response body can only be sent once.
+function genericOk() {
+  return NextResponse.json({
+    message: "If that email exists, a reset link has been sent.",
+  });
+}
 
 export async function POST(req: Request) {
   const rl = rateLimit(clientKey(req, "forgot-password"), 5, 60_000);
@@ -41,7 +44,7 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({ where: { email } });
   // Return generic response regardless — don't reveal if email exists.
-  if (!user) return GENERIC_OK;
+  if (!user) return genericOk();
 
   // Delete any existing pending reset tokens for this user.
   await prisma.verificationToken.deleteMany({
@@ -62,5 +65,5 @@ export async function POST(req: Request) {
     // Still return generic OK — the token is in DB; log the error.
   }
 
-  return GENERIC_OK;
+  return genericOk();
 }
