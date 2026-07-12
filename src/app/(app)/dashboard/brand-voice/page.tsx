@@ -13,16 +13,21 @@ export default async function BrandVoicePage() {
       <div>
         <h1 className="text-2xl font-bold">Brand Voice</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tell ViralForge about your brand so every content pack sounds like you.
+          Teach ViralForge how you sound — so every post it writes feels like{" "}
+          <span className="text-foreground">you</span> wrote it.
         </p>
       </div>
 
       <div className="rounded-xl border border-border bg-card/50 p-4 text-sm text-muted-foreground">
-        <p>
-          <span className="font-medium text-foreground">How this is used:</span> When
-          you generate content, ViralForge automatically injects your brand voice profile
-          into the prompt. The AI will apply your preferred tone, vocabulary, and style
-          without you needing to repeat it each time.
+        <p className="font-medium text-foreground">💡 How it works</p>
+        <p className="mt-1">
+          Fill this in once, like you&apos;re introducing yourself to a new social media
+          assistant. From then on, every content pack you generate will automatically
+          match your style — no need to repeat yourself.
+        </p>
+        <p className="mt-2 text-xs">
+          Every field is optional. Skip anything you&apos;re unsure about — you can
+          always come back and change it.
         </p>
       </div>
 

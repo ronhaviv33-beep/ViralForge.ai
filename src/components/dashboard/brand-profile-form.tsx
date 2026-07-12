@@ -22,6 +22,21 @@ const SENTENCE_LENGTHS = ["Short", "Medium", "Long", "Mixed"] as const;
 const EMOJI_USAGES = ["None", "Minimal", "Moderate", "Heavy"] as const;
 const NONE = "__none__";
 
+// Friendly display text for dropdown options. Saved values stay unchanged so
+// existing profiles keep working.
+const SENTENCE_LENGTH_LABELS: Record<(typeof SENTENCE_LENGTHS)[number], string> = {
+  Short: "Short & punchy",
+  Medium: "Medium — a bit of both",
+  Long: "Long — storytelling style",
+  Mixed: "Mixed — varies by post",
+};
+const EMOJI_USAGE_LABELS: Record<(typeof EMOJI_USAGES)[number], string> = {
+  None: "No emojis",
+  Minimal: "A few here and there",
+  Moderate: "A moderate amount",
+  Heavy: "Lots of emojis 🎉",
+};
+
 interface Props {
   initialProfile: BrandProfile | null;
 }
@@ -98,36 +113,53 @@ export function BrandProfileForm({ initialProfile }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Identity */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-base font-semibold">Brand Identity</h2>
+        <div>
+          <h2 className="text-base font-semibold">Who are you?</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            The basics — who&apos;s talking, and who&apos;s listening.
+          </p>
+        </div>
         <div className="space-y-2">
-          <Label htmlFor="brandName">Brand / Creator Name</Label>
+          <Label htmlFor="brandName">Your name or brand name</Label>
           <Input
             id="brandName"
             value={brandName}
             onChange={(e) => setBrandName(e.target.value.slice(0, 100))}
-            placeholder="ViralForge, Jane Smith, etc."
+            placeholder="e.g. ViralForge, Jane Smith"
             disabled={saving}
           />
+          <p className="text-xs text-muted-foreground">
+            The name you go by online.
+          </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="audience">Target Audience</Label>
+          <Label htmlFor="audience">Who is your content for?</Label>
           <Textarea
             id="audience"
             value={audience}
             onChange={(e) => setAudience(e.target.value.slice(0, 400))}
-            placeholder="Tech founders aged 25-45 who want to grow on social media…"
+            placeholder="e.g. New freelancers who want to get more clients from Instagram"
             className="min-h-[72px]"
             disabled={saving}
           />
+          <p className="text-xs text-muted-foreground">
+            Describe your followers like you&apos;d describe them to a friend. Who are
+            they and what do they want?
+          </p>
         </div>
       </div>
 
       {/* Voice */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-base font-semibold">Voice & Style</h2>
+        <div>
+          <h2 className="text-base font-semibold">How do you sound?</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Your writing style — the AI will copy it.
+          </p>
+        </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label>Default Tone</Label>
+            <Label>Your usual vibe</Label>
             <Select
               value={defaultTone || NONE}
               onValueChange={(v) => setDefaultTone(v === NONE ? "" : v)}
@@ -147,7 +179,7 @@ export function BrandProfileForm({ initialProfile }: Props) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Sentence Length</Label>
+            <Label>Sentence style</Label>
             <Select
               value={sentenceLength || NONE}
               onValueChange={(v) => setSentenceLength(v === NONE ? "" : v)}
@@ -160,14 +192,14 @@ export function BrandProfileForm({ initialProfile }: Props) {
                 <SelectItem value={NONE}>No preference</SelectItem>
                 {SENTENCE_LENGTHS.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {s}
+                    {SENTENCE_LENGTH_LABELS[s]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Emoji Usage</Label>
+            <Label>Emojis</Label>
             <Select
               value={emojiUsage || NONE}
               onValueChange={(v) => setEmojiUsage(v === NONE ? "" : v)}
@@ -180,7 +212,7 @@ export function BrandProfileForm({ initialProfile }: Props) {
                 <SelectItem value={NONE}>No preference</SelectItem>
                 {EMOJI_USAGES.map((e) => (
                   <SelectItem key={e} value={e}>
-                    {e}
+                    {EMOJI_USAGE_LABELS[e]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -188,20 +220,28 @@ export function BrandProfileForm({ initialProfile }: Props) {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ctaStyle">CTA Style</Label>
+          <Label htmlFor="ctaStyle">How do you end your posts?</Label>
           <Input
             id="ctaStyle"
             value={ctaStyle}
             onChange={(e) => setCtaStyle(e.target.value.slice(0, 150))}
-            placeholder="e.g. 'Link in bio', 'DM me', 'Drop a comment below'"
+            placeholder="e.g. 'Follow for more', 'Link in bio', 'Drop a comment below'"
             disabled={saving}
           />
+          <p className="text-xs text-muted-foreground">
+            The line you usually use to ask people to follow, comment, or click.
+          </p>
         </div>
       </div>
 
       {/* Platforms */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-base font-semibold">Primary Platforms</h2>
+        <div>
+          <h2 className="text-base font-semibold">Where do you post the most?</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Tap the ones you actually use — the AI will focus on them.
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2">
           {PLATFORMS.map((p) => {
             const active = primaryPlatforms.includes(p);
@@ -227,37 +267,53 @@ export function BrandProfileForm({ initialProfile }: Props) {
 
       {/* Content */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-base font-semibold">Content Strategy</h2>
+        <div>
+          <h2 className="text-base font-semibold">What do you talk about?</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Your topics and the words that sound like you.
+          </p>
+        </div>
         <div className="space-y-2">
-          <Label htmlFor="contentPillars">Content Pillars</Label>
+          <Label htmlFor="contentPillars">Your main topics</Label>
           <Input
             id="contentPillars"
             value={contentPillars}
             onChange={(e) => setContentPillars(e.target.value)}
-            placeholder="Education, Behind the scenes, Product updates (comma-separated)"
+            placeholder="e.g. Fitness tips, My daily routine, Client stories"
             disabled={saving}
           />
+          <p className="text-xs text-muted-foreground">
+            The 3–5 subjects you keep coming back to. Separate them with commas.
+          </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="vocabulary">Preferred Vocabulary</Label>
+          <Label htmlFor="vocabulary">Words & phrases you love using</Label>
           <Input
             id="vocabulary"
             value={vocabulary}
             onChange={(e) => setVocabulary(e.target.value)}
-            placeholder="founder, ship it, build in public (comma-separated)"
+            placeholder="e.g. let's go, game changer, no fluff"
             disabled={saving}
           />
+          <p className="text-xs text-muted-foreground">
+            Your signature expressions — the AI will sprinkle them in naturally.
+            Separate them with commas.
+          </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="notes">Additional Notes</Label>
+          <Label htmlFor="notes">Anything else?</Label>
           <Textarea
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value.slice(0, 1000))}
-            placeholder="Anything else the AI should know about your brand voice…"
+            placeholder="e.g. Never use hard-sell language. I always write in first person. Keep it positive."
             className="min-h-[96px]"
             disabled={saving}
           />
+          <p className="text-xs text-muted-foreground">
+            Imagine you hired someone to write your posts — what would you tell them
+            on day one?
+          </p>
         </div>
       </div>
 
