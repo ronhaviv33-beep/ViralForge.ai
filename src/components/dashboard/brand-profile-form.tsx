@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eraser } from "lucide-react";
 import { TONES, PLATFORMS } from "@/lib/constants";
 import type { BrandProfile } from "@/lib/brand-profile";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,24 @@ export function BrandProfileForm({ initialProfile }: Props) {
     setPrimaryPlatforms((prev) =>
       prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]
     );
+  }
+
+  function handleResetAll() {
+    const confirmed = window.confirm(
+      "Clear all Brand Voice fields? This empties the form — nothing is deleted until you click Save."
+    );
+    if (!confirmed) return;
+    setBrandName("");
+    setAudience("");
+    setDefaultTone("");
+    setSentenceLength("");
+    setEmojiUsage("");
+    setCtaStyle("");
+    setPrimaryPlatforms([]);
+    setContentPillars("");
+    setVocabulary("");
+    setNotes("");
+    toast.info("All fields cleared. Click “Save brand voice” to make it permanent.");
   }
 
   function splitCsv(val: string): string[] {
@@ -317,15 +335,26 @@ export function BrandProfileForm({ initialProfile }: Props) {
         </div>
       </div>
 
-      <Button type="submit" disabled={saving} className="w-full sm:w-auto">
-        {saving ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Saving…
-          </>
-        ) : (
-          "Save brand voice"
-        )}
-      </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Button type="submit" disabled={saving} className="w-full sm:w-auto">
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+            </>
+          ) : (
+            "Save brand voice"
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleResetAll}
+          disabled={saving}
+          className="w-full sm:w-auto text-muted-foreground"
+        >
+          <Eraser className="h-4 w-4" /> Reset all fields
+        </Button>
+      </div>
     </form>
   );
 }
