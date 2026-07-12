@@ -4,6 +4,7 @@ import { PLANS, type PlanId } from "@/lib/plans";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { CreateUserDialog } from "@/components/admin/create-user-dialog";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -24,11 +25,14 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Users</h1>
-        <p className="mt-1 text-muted-foreground">
-          {users.length} user{users.length !== 1 ? "s" : ""} found
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Users</h1>
+          <p className="mt-1 text-muted-foreground">
+            {users.length} user{users.length !== 1 ? "s" : ""} found
+          </p>
+        </div>
+        <CreateUserDialog />
       </div>
 
       {/* Filters */}

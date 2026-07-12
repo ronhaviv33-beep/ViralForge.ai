@@ -63,6 +63,17 @@ export const regenerateSectionSchema = z.object({
   }),
 });
 
+export const adminCreateUserSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(80).optional(),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100),
+  plan: z.enum(["free", "creator", "pro", "agency"]).default("free"),
+  role: z.enum(["USER", "ADMIN"]).default("USER"),
+});
+
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
 });
