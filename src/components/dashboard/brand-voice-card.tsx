@@ -13,6 +13,7 @@ export function BrandVoiceCard({ profile }: { profile: BrandProfile | null }) {
       profile.ctaStyle ||
       profile.contentPillars?.length ||
       profile.primaryPlatforms?.length ||
+      profile.vocabulary?.length ||
       profile.notes);
 
   if (!hasContent) {

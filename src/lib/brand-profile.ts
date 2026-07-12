@@ -25,10 +25,25 @@ export async function upsertBrandProfile(
   userId: string,
   input: BrandProfileInput
 ): Promise<BrandProfile> {
+  // The form always submits its full state, so an absent field means the user
+  // cleared it. Map undefined → null explicitly: in a Prisma update, undefined
+  // would silently keep the old value, which broke "reset all fields".
+  const data = {
+    brandName: input.brandName ?? null,
+    audience: input.audience ?? null,
+    defaultTone: input.defaultTone ?? null,
+    sentenceLength: input.sentenceLength ?? null,
+    emojiUsage: input.emojiUsage ?? null,
+    ctaStyle: input.ctaStyle ?? null,
+    contentPillars: input.contentPillars ?? [],
+    vocabulary: input.vocabulary ?? [],
+    primaryPlatforms: input.primaryPlatforms ?? [],
+    notes: input.notes ?? null,
+  };
   return prisma.brandProfile.upsert({
     where: { userId },
-    update: { ...input },
-    create: { userId, ...input },
+    update: data,
+    create: { userId, ...data },
   });
 }
 
