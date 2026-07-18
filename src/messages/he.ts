@@ -1,0 +1,67 @@
+import type { Messages } from "@/messages/en";
+
+export const he: Messages = {
+  common: {
+    language: "שפה",
+    logout: "התנתקות",
+    backHome: "חזרה לדף הבית",
+    planLabel: "מסלול {plan}",
+    viewAll: "הצגת הכול",
+  },
+  nav: {
+    overview: "סקירה",
+    generate: "יצירת תוכן",
+    history: "היסטוריה",
+    analytics: "אנליטיקה",
+    creatorAgent: "סוכן יוצרים",
+    settings: "הגדרות",
+    admin: "ניהול",
+  },
+  marketing: {
+    features: "יכולות",
+    examples: "דוגמאות",
+    pricing: "תמחור",
+    howItWorks: "איך זה עובד",
+    dashboard: "לוח בקרה",
+    login: "התחברות",
+    startFree: "התחלה בחינם",
+  },
+  usage: {
+    unlimited: "ללא הגבלה",
+    unlimitedHint: "אפשר ליצור ללא הגבלה החודש.",
+    remainingOne: "נותרה יצירה אחת החודש.",
+    remainingMany: "נותרו {count} יצירות החודש.",
+    upgradePlan: "← שדרוג מסלול",
+  },
+  dashboard: {
+    welcome: "טוב לראות אותך שוב 👋",
+    welcomeName: "טוב לראות אותך שוב, {name} 👋",
+    subtitle: "הפכו את הרעיון הבא שלכם לחבילת תוכן מלאה.",
+    newGeneration: "יצירה חדשה",
+    recentGenerations: "יצירות אחרונות",
+    emptyTitle: "עדיין אין יצירות",
+    emptyBody:
+      "הדביקו רעיון או תמלול ו-ViralForge ייצור עבורכם הוקים, כיתובים, שרשורים, האשטגים ועוד.",
+    createFirstPack: "צרו את החבילה הראשונה שלכם",
+    stats: {
+      generatedThisMonth: "נוצרו החודש",
+      unlimitedPlan: "מסלול ללא הגבלה",
+      ofLimitOnPlan: "מתוך {limit} במסלול {plan}",
+      creditsRemaining: "קרדיטים שנותרו",
+      resetsMonthStart: "מתאפס בתחילת החודש",
+      hoursSaved: "שעות שנחסכו (הערכה)",
+      hoursSavedHint: "≈ שעתיים לכל חבילת תוכן",
+      mostUsedTone: "הטון הנפוץ ביותר",
+      goToVoice: "הקול המועדף עליכם",
+      noData: "אין נתונים עדיין",
+      mostUsedPlatform: "הפלטפורמה הנפוצה ביותר",
+      whereYouCreate: "המקום שבו אתם יוצרים הכי הרבה",
+      totalPacks: 'סה"כ חבילות תוכן',
+      allTime: "מאז ומתמיד",
+    },
+  },
+  generate: {
+    title: "יצירת חבילת תוכן",
+    subtitle: "רעיון אחד נכנס — חבילת תוכן מלאה לכל הפלטפורמות יוצאת.",
+  },
+};

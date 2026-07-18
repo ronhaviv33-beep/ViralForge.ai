@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n-provider";
 
 export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
+  const { t } = useI18n();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -22,7 +24,7 @@ export function LogoutButton({ className }: { className?: string }) {
       )}
     >
       <LogOut className="h-4 w-4" />
-      Log out
+      {t("common.logout")}
     </button>
   );
 }

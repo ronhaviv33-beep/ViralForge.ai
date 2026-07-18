@@ -6,6 +6,7 @@ import { DashboardNav } from "@/components/dashboard/nav";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { PLANS, type PlanId } from "@/lib/plans";
 
 export default async function DashboardLayout({
@@ -26,7 +27,7 @@ export default async function DashboardLayout({
       <MobileNav planLabel={PLANS[plan].name} isAdmin={isAdmin} />
 
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-card/40 p-4 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-card/40 p-4 md:flex rtl:border-l rtl:border-r-0">
         <div className="px-2 py-2">
           <Logo href="/dashboard" />
         </div>
@@ -34,6 +35,7 @@ export default async function DashboardLayout({
           <DashboardNav isAdmin={isAdmin} />
         </div>
         <div className="space-y-3">
+          <LanguageSwitcher className="w-fit" />
           <UsageMeter plan={plan} usage={usage} />
           <div className="border-t border-border pt-2">
             <div className="truncate px-3 pb-1 text-xs text-muted-foreground">

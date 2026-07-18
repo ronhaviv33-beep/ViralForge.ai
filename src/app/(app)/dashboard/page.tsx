@@ -17,10 +17,12 @@ import { Button } from "@/components/ui/button";
 import { GenerationCard } from "@/components/dashboard/generation-card";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { CheckoutToast } from "@/components/dashboard/checkout-toast";
+import { getT } from "@/lib/i18n-server";
 
 export default async function DashboardPage() {
   const user = await requireUser();
   const plan = user.plan as PlanId;
+  const t = await getT();
 
   const [recent, analytics] = await Promise.all([
     prisma.generation.findMany({
@@ -36,50 +38,57 @@ export default async function DashboardPage() {
 
   const stats = [
     {
-      label: "Generated this month",
+      label: t("dashboard.stats.generatedThisMonth"),
       value: String(analytics.generatedThisMonth),
       hint: analytics.unlimited
-        ? "Unlimited plan"
-        : `of ${PLANS[plan].limit} on ${PLANS[plan].name}`,
+        ? t("dashboard.stats.unlimitedPlan")
+        : t("dashboard.stats.ofLimitOnPlan", {
+            limit: PLANS[plan].limit,
+            plan: PLANS[plan].name,
+          }),
       icon: Calendar,
       accent: "primary" as const,
     },
     {
-      label: "Credits remaining",
+      label: t("dashboard.stats.creditsRemaining"),
       value: analytics.unlimited
-        ? "Unlimited"
+        ? t("usage.unlimited")
         : String(analytics.creditsRemaining),
       hint: analytics.unlimited
-        ? `${PLANS[plan].name} plan`
-        : "Resets at month start",
+        ? t("common.planLabel", { plan: PLANS[plan].name })
+        : t("dashboard.stats.resetsMonthStart"),
       icon: Gauge,
       accent: "accent" as const,
     },
     {
-      label: "Estimated hours saved",
+      label: t("dashboard.stats.hoursSaved"),
       value: `${analytics.estimatedHoursSaved}h`,
-      hint: "≈ 2 hours per content pack",
+      hint: t("dashboard.stats.hoursSavedHint"),
       icon: Clock,
       accent: "accent" as const,
     },
     {
-      label: "Most used tone",
+      label: t("dashboard.stats.mostUsedTone"),
       value: analytics.mostUsedTone ?? "—",
-      hint: analytics.mostUsedTone ? "Your go-to voice" : "No data yet",
+      hint: analytics.mostUsedTone
+        ? t("dashboard.stats.goToVoice")
+        : t("dashboard.stats.noData"),
       icon: MessageSquare,
       accent: "primary" as const,
     },
     {
-      label: "Most used platform",
+      label: t("dashboard.stats.mostUsedPlatform"),
       value: analytics.mostUsedPlatform ?? "—",
-      hint: analytics.mostUsedPlatform ? "Where you create most" : "No data yet",
+      hint: analytics.mostUsedPlatform
+        ? t("dashboard.stats.whereYouCreate")
+        : t("dashboard.stats.noData"),
       icon: Share2,
       accent: "primary" as const,
     },
     {
-      label: "Total content packs",
+      label: t("dashboard.stats.totalPacks"),
       value: String(total),
-      hint: "All time",
+      hint: t("dashboard.stats.allTime"),
       icon: History,
       accent: "primary" as const,
     },
@@ -93,15 +102,15 @@ export default async function DashboardPage() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold">
-            Welcome back{firstName ? `, ${firstName}` : ""} 👋
+            {firstName
+              ? t("dashboard.welcomeName", { name: firstName })
+              : t("dashboard.welcome")}
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Turn your next idea into a full content pack.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("dashboard.subtitle")}</p>
         </div>
         <Button asChild size="lg" className="glow-primary">
           <Link href="/dashboard/generate">
-            <Sparkles className="h-4 w-4" /> New generation
+            <Sparkles className="h-4 w-4" /> {t("dashboard.newGeneration")}
           </Link>
         </Button>
       </div>
@@ -123,10 +132,12 @@ export default async function DashboardPage() {
       {/* Recent */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Recent generations</h2>
+          <h2 className="text-lg font-semibold">
+            {t("dashboard.recentGenerations")}
+          </h2>
           {total > 0 && (
             <Button asChild variant="ghost" size="sm">
-              <Link href="/dashboard/history">View all</Link>
+              <Link href="/dashboard/history">{t("common.viewAll")}</Link>
             </Button>
           )}
         </div>
@@ -136,14 +147,13 @@ export default async function DashboardPage() {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Sparkles className="h-6 w-6" />
             </div>
-            <h3 className="font-semibold">No generations yet</h3>
+            <h3 className="font-semibold">{t("dashboard.emptyTitle")}</h3>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-              Paste an idea or transcript and ViralForge will create hooks,
-              captions, threads, hashtags and more.
+              {t("dashboard.emptyBody")}
             </p>
             <Button asChild className="mt-5">
               <Link href="/dashboard/generate">
-                <Sparkles className="h-4 w-4" /> Create your first pack
+                <Sparkles className="h-4 w-4" /> {t("dashboard.createFirstPack")}
               </Link>
             </Button>
           </div>

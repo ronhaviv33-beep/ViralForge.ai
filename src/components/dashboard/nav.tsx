@@ -4,17 +4,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Sparkles, History, Settings, ShieldCheck, BarChart2, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { MessageKey } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
-const ITEMS = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/generate", label: "Generate", icon: Sparkles },
-  { href: "/dashboard/history", label: "History", icon: History },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/dashboard/creator-agent", label: "Creator Agent", icon: Bot },
-  { href: "/settings", label: "Settings", icon: Settings },
+const ITEMS: Array<{
+  href: string;
+  labelKey: MessageKey;
+  icon: React.ComponentType<{ className?: string }>;
+  exact?: boolean;
+}> = [
+  { href: "/dashboard", labelKey: "nav.overview", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/generate", labelKey: "nav.generate", icon: Sparkles },
+  { href: "/dashboard/history", labelKey: "nav.history", icon: History },
+  { href: "/dashboard/analytics", labelKey: "nav.analytics", icon: BarChart2 },
+  { href: "/dashboard/creator-agent", labelKey: "nav.creatorAgent", icon: Bot },
+  { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
-const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: ShieldCheck };
+const ADMIN_ITEM: (typeof ITEMS)[number] = {
+  href: "/admin",
+  labelKey: "nav.admin",
+  icon: ShieldCheck,
+};
 
 export function DashboardNav({
   onNavigate,
@@ -24,12 +35,13 @@ export function DashboardNav({
   isAdmin?: boolean;
 }) {
   const pathname = usePathname();
+  const { t } = useI18n();
   const items = isAdmin ? [...ITEMS, ADMIN_ITEM] : ITEMS;
 
   return (
     <nav className="flex flex-col gap-1">
       {items.map((item) => {
-        const active = "exact" in item && item.exact
+        const active = item.exact
           ? pathname === item.href
           : pathname.startsWith(item.href);
         return (
@@ -45,7 +57,7 @@ export function DashboardNav({
             )}
           >
             <item.icon className="h-4 w-4" />
-            {item.label}
+            {t(item.labelKey)}
           </Link>
         );
       })}

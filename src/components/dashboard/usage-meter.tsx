@@ -2,14 +2,16 @@ import Link from "next/link";
 import { Infinity as InfinityIcon } from "lucide-react";
 import { PLANS, type PlanId } from "@/lib/plans";
 import type { UsageStatus } from "@/lib/usage";
+import { getT } from "@/lib/i18n-server";
 
-export function UsageMeter({
+export async function UsageMeter({
   plan,
   usage,
 }: {
   plan: PlanId;
   usage: UsageStatus;
 }) {
+  const t = await getT();
   const planName = PLANS[plan].name;
   const pct = usage.unlimited
     ? 0
@@ -18,10 +20,12 @@ export function UsageMeter({
   return (
     <div className="rounded-xl border border-border bg-background/40 p-4">
       <div className="mb-2 flex items-center justify-between text-sm">
-        <span className="font-medium">{planName} plan</span>
+        <span className="font-medium">
+          {t("common.planLabel", { plan: planName })}
+        </span>
         {usage.unlimited ? (
           <span className="flex items-center gap-1 text-accent">
-            <InfinityIcon className="h-4 w-4" /> Unlimited
+            <InfinityIcon className="h-4 w-4" /> {t("usage.unlimited")}
           </span>
         ) : (
           <span className="text-muted-foreground">
@@ -39,17 +43,17 @@ export function UsageMeter({
       )}
       <p className="mt-2 text-xs text-muted-foreground">
         {usage.unlimited
-          ? "Generate as much as you want this month."
-          : `${usage.remaining} generation${
-              usage.remaining === 1 ? "" : "s"
-            } left this month.`}
+          ? t("usage.unlimitedHint")
+          : usage.remaining === 1
+            ? t("usage.remainingOne")
+            : t("usage.remainingMany", { count: usage.remaining })}
       </p>
       {!usage.unlimited && plan !== "agency" && (
         <Link
           href="/pricing"
           className="mt-3 inline-block text-xs font-medium text-primary hover:underline"
         >
-          Upgrade plan →
+          {t("usage.upgradePlan")}
         </Link>
       )}
     </div>
