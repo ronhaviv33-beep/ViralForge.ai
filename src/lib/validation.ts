@@ -30,14 +30,20 @@ export const generateSchema = z.object({
 
 export const brandProfileSchema = z.object({
   brandName: z.string().trim().max(100).optional(),
+  niche: z.string().trim().max(150).optional(),
   audience: z.string().trim().max(400).optional(),
+  goals: z.string().trim().max(400).optional(),
   defaultTone: z.string().trim().max(50).optional(),
   sentenceLength: z.string().trim().max(50).optional(),
   emojiUsage: z.string().trim().max(50).optional(),
   ctaStyle: z.string().trim().max(150).optional(),
+  postingStyle: z.string().trim().max(200).optional(),
   contentPillars: z.array(z.string().trim().max(60)).max(10).default([]),
   vocabulary: z.array(z.string().trim().max(60)).max(30).default([]),
+  preferredPhrases: z.array(z.string().trim().max(100)).max(20).default([]),
+  bannedPhrases: z.array(z.string().trim().max(100)).max(20).default([]),
   primaryPlatforms: z.array(z.string().trim().max(60)).max(10).default([]),
+  examplePosts: z.string().trim().max(4000).optional(),
   notes: z.string().trim().max(1000).optional(),
 });
 

@@ -95,18 +95,25 @@ model Generation {
   @@index([createdAt])
 }
 
+// Powers the user-facing "Creator Agent" feature (formerly Brand Voice).
 model BrandProfile {
   id               String   @id @default(cuid())
   userId           String   @unique
   brandName        String?
+  niche            String?
   audience         String?
+  goals            String?
   defaultTone      String?
   sentenceLength   String?
   emojiUsage       String?
   ctaStyle         String?
+  postingStyle     String?
   contentPillars   String[]
   vocabulary       String[]
+  preferredPhrases String[]
+  bannedPhrases    String[]
   primaryPlatforms String[]
+  examplePosts     String?  @db.Text
   notes            String?  @db.Text
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

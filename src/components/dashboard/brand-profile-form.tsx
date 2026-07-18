@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Eraser } from "lucide-react";
 import { TONES, PLATFORMS } from "@/lib/constants";
@@ -42,16 +43,22 @@ interface Props {
 }
 
 export function BrandProfileForm({ initialProfile }: Props) {
+  const router = useRouter();
   const [saving, setSaving] = React.useState(false);
 
   const [brandName, setBrandName] = React.useState(initialProfile?.brandName ?? "");
+  const [niche, setNiche] = React.useState(initialProfile?.niche ?? "");
   const [audience, setAudience] = React.useState(initialProfile?.audience ?? "");
+  const [goals, setGoals] = React.useState(initialProfile?.goals ?? "");
   const [defaultTone, setDefaultTone] = React.useState(initialProfile?.defaultTone ?? "");
   const [sentenceLength, setSentenceLength] = React.useState(
     initialProfile?.sentenceLength ?? ""
   );
   const [emojiUsage, setEmojiUsage] = React.useState(initialProfile?.emojiUsage ?? "");
   const [ctaStyle, setCtaStyle] = React.useState(initialProfile?.ctaStyle ?? "");
+  const [postingStyle, setPostingStyle] = React.useState(
+    initialProfile?.postingStyle ?? ""
+  );
   const [primaryPlatforms, setPrimaryPlatforms] = React.useState<string[]>(
     initialProfile?.primaryPlatforms ?? []
   );
@@ -60,6 +67,15 @@ export function BrandProfileForm({ initialProfile }: Props) {
   );
   const [vocabulary, setVocabulary] = React.useState(
     initialProfile?.vocabulary?.join(", ") ?? ""
+  );
+  const [preferredPhrases, setPreferredPhrases] = React.useState(
+    initialProfile?.preferredPhrases?.join(", ") ?? ""
+  );
+  const [bannedPhrases, setBannedPhrases] = React.useState(
+    initialProfile?.bannedPhrases?.join(", ") ?? ""
+  );
+  const [examplePosts, setExamplePosts] = React.useState(
+    initialProfile?.examplePosts ?? ""
   );
   const [notes, setNotes] = React.useState(initialProfile?.notes ?? "");
 
@@ -71,20 +87,26 @@ export function BrandProfileForm({ initialProfile }: Props) {
 
   function handleResetAll() {
     const confirmed = window.confirm(
-      "Clear all Brand Voice fields? This empties the form — nothing is deleted until you click Save."
+      "Clear all Creator Agent fields? This empties the form — nothing is deleted until you click Save."
     );
     if (!confirmed) return;
     setBrandName("");
+    setNiche("");
     setAudience("");
+    setGoals("");
     setDefaultTone("");
     setSentenceLength("");
     setEmojiUsage("");
     setCtaStyle("");
+    setPostingStyle("");
     setPrimaryPlatforms([]);
     setContentPillars("");
     setVocabulary("");
+    setPreferredPhrases("");
+    setBannedPhrases("");
+    setExamplePosts("");
     setNotes("");
-    toast.info("All fields cleared. Click “Save brand voice” to make it permanent.");
+    toast.info("All fields cleared. Click “Save Creator Agent” to make it permanent.");
   }
 
   function splitCsv(val: string): string[] {
@@ -103,23 +125,30 @@ export function BrandProfileForm({ initialProfile }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           brandName: brandName || undefined,
+          niche: niche || undefined,
           audience: audience || undefined,
+          goals: goals || undefined,
           defaultTone: defaultTone || undefined,
           sentenceLength: sentenceLength || undefined,
           emojiUsage: emojiUsage || undefined,
           ctaStyle: ctaStyle || undefined,
+          postingStyle: postingStyle || undefined,
           primaryPlatforms,
           contentPillars: splitCsv(contentPillars),
           vocabulary: splitCsv(vocabulary),
+          preferredPhrases: splitCsv(preferredPhrases),
+          bannedPhrases: splitCsv(bannedPhrases),
+          examplePosts: examplePosts || undefined,
           notes: notes || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to save brand profile.");
+        toast.error(data.error || "Failed to save your Creator Agent.");
         return;
       }
-      toast.success("Brand voice profile saved.");
+      toast.success("Your Creator Agent has been updated.");
+      router.refresh();
     } catch {
       toast.error("Network error. Please try again.");
     } finally {
@@ -151,6 +180,19 @@ export function BrandProfileForm({ initialProfile }: Props) {
           </p>
         </div>
         <div className="space-y-2">
+          <Label htmlFor="niche">What&apos;s your niche?</Label>
+          <Input
+            id="niche"
+            value={niche}
+            onChange={(e) => setNiche(e.target.value.slice(0, 150))}
+            placeholder="e.g. Fitness for busy parents, No-code app building"
+            disabled={saving}
+          />
+          <p className="text-xs text-muted-foreground">
+            The corner of the internet you want to own.
+          </p>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="audience">Who is your content for?</Label>
           <Textarea
             id="audience"
@@ -163,6 +205,20 @@ export function BrandProfileForm({ initialProfile }: Props) {
           <p className="text-xs text-muted-foreground">
             Describe your followers like you&apos;d describe them to a friend. Who are
             they and what do they want?
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="goals">What do you want to be known for?</Label>
+          <Textarea
+            id="goals"
+            value={goals}
+            onChange={(e) => setGoals(e.target.value.slice(0, 400))}
+            placeholder="e.g. The person who makes personal finance actually simple"
+            className="min-h-[72px]"
+            disabled={saving}
+          />
+          <p className="text-xs text-muted-foreground">
+            Your agent keeps your content pointed at this goal.
           </p>
         </div>
       </div>
@@ -248,6 +304,79 @@ export function BrandProfileForm({ initialProfile }: Props) {
           />
           <p className="text-xs text-muted-foreground">
             The line you usually use to ask people to follow, comment, or click.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="postingStyle">
+            How would you describe your posting style?
+          </Label>
+          <Input
+            id="postingStyle"
+            value={postingStyle}
+            onChange={(e) => setPostingStyle(e.target.value.slice(0, 200))}
+            placeholder="e.g. Short daily tips with one personal story per week"
+            disabled={saving}
+          />
+        </div>
+      </div>
+
+      {/* Signature phrases */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold">Your signature phrases</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Words to lean into — and words that should never appear.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="preferredPhrases">Phrases that sound like you</Label>
+          <Input
+            id="preferredPhrases"
+            value={preferredPhrases}
+            onChange={(e) => setPreferredPhrases(e.target.value)}
+            placeholder="e.g. let's be real, small steps big wins"
+            disabled={saving}
+          />
+          <p className="text-xs text-muted-foreground">
+            Your agent will work these in naturally. Separate with commas.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bannedPhrases">Phrases to never use</Label>
+          <Input
+            id="bannedPhrases"
+            value={bannedPhrases}
+            onChange={(e) => setBannedPhrases(e.target.value)}
+            placeholder="e.g. game changer, crushing it, hustle"
+            disabled={saving}
+          />
+          <p className="text-xs text-muted-foreground">
+            Words that make you cringe — your agent will avoid them. Separate with
+            commas.
+          </p>
+        </div>
+      </div>
+
+      {/* Example content */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold">Show it your work</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            The fastest way to teach your agent — let it study your best posts.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="examplePosts">Paste 1–3 posts you&apos;re proud of</Label>
+          <Textarea
+            id="examplePosts"
+            value={examplePosts}
+            onChange={(e) => setExamplePosts(e.target.value.slice(0, 4000))}
+            placeholder={"Paste a caption, post, or script that really sounds like you.\n\nSeparate multiple examples with a blank line."}
+            className="min-h-[140px]"
+            disabled={saving}
+          />
+          <p className="text-xs text-muted-foreground">
+            Your agent studies these to match your rhythm, humor, and word choice.
           </p>
         </div>
       </div>
@@ -342,7 +471,7 @@ export function BrandProfileForm({ initialProfile }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" /> Saving…
             </>
           ) : (
-            "Save brand voice"
+            "Save Creator Agent"
           )}
         </Button>
         <Button

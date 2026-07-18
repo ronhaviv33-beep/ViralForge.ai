@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mic2 } from "lucide-react";
+import { Bot } from "lucide-react";
 import type { BrandProfile } from "@prisma/client";
 
 export function BrandVoiceCard({ profile }: { profile: BrandProfile | null }) {
@@ -7,30 +7,38 @@ export function BrandVoiceCard({ profile }: { profile: BrandProfile | null }) {
   const hasContent =
     profile &&
     (profile.brandName ||
+      profile.niche ||
       profile.audience ||
+      profile.goals ||
       profile.sentenceLength ||
       profile.emojiUsage ||
       profile.ctaStyle ||
+      profile.postingStyle ||
       profile.contentPillars?.length ||
       profile.primaryPlatforms?.length ||
       profile.vocabulary?.length ||
+      profile.preferredPhrases?.length ||
+      profile.bannedPhrases?.length ||
+      profile.examplePosts ||
       profile.notes);
 
   if (!hasContent) {
     return (
       <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border bg-transparent px-4 py-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Mic2 className="h-3.5 w-3.5 shrink-0" />
+          <Bot className="h-3.5 w-3.5 shrink-0" />
           <span>
-            <span className="font-medium">No Brand Voice profile yet.</span>{" "}
-            Set one up to personalize your generations.
+            <span className="font-medium">
+              Your Creator Agent isn&apos;t set up yet.
+            </span>{" "}
+            Tell ViralForge about your style so your content feels more like you.
           </span>
         </div>
         <Link
-          href="/dashboard/brand-voice"
+          href="/dashboard/creator-agent"
           className="shrink-0 text-xs font-medium text-primary hover:underline"
         >
-          Set up →
+          Set up Creator Agent →
         </Link>
       </div>
     );
@@ -39,6 +47,7 @@ export function BrandVoiceCard({ profile }: { profile: BrandProfile | null }) {
   // Build an inline summary string from the most readable fields.
   const summaryParts: string[] = [];
   if (profile.brandName) summaryParts.push(profile.brandName);
+  if (profile.niche) summaryParts.push(profile.niche);
   if (profile.audience) summaryParts.push(profile.audience);
   if (profile.sentenceLength) summaryParts.push(`${profile.sentenceLength} sentences`);
   if (profile.emojiUsage && profile.emojiUsage !== "None")
@@ -58,15 +67,15 @@ export function BrandVoiceCard({ profile }: { profile: BrandProfile | null }) {
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <Mic2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <span className="font-medium text-foreground">Brand Voice applied</span>
+          <Bot className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <span className="font-medium text-foreground">Creator Agent applied</span>
           <span className="hidden text-muted-foreground sm:inline">·</span>
           <span className="hidden text-xs text-muted-foreground sm:inline">
             Used to personalize this generation
           </span>
         </div>
         <Link
-          href="/dashboard/brand-voice"
+          href="/dashboard/creator-agent"
           className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
         >
           Edit
