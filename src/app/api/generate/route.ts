@@ -8,6 +8,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getBrandProfile, formatBrandProfileForPrompt } from "@/lib/brand-profile";
 import { startAgentRun, completeAgentRun, failAgentRun } from "@/lib/agent-runs";
 import { getAgentUsageStatus } from "@/lib/agent-limits";
+import { resolveContentLocale } from "@/lib/i18n";
 import { getLocale, getT } from "@/lib/i18n-server";
 
 export const runtime = "nodejs";
@@ -64,6 +65,10 @@ export async function POST(req: Request) {
 
   const { text, tone, platforms } = parsed.data;
 
+  // Content language: the user's explicit form choice wins; otherwise the
+  // active UI locale. This one value drives the AI output language.
+  const contentLocale = resolveContentLocale(parsed.data.contentLanguage, locale);
+
   const brandProfile = await getBrandProfile(user.id);
   let brandContext = formatBrandProfileForPrompt(brandProfile);
 
@@ -92,7 +97,7 @@ export async function POST(req: Request) {
   let pack;
   let meta;
   try {
-    ({ pack, meta } = await generateContentPack(text, tone, platforms, brandContext, locale));
+    ({ pack, meta } = await generateContentPack(text, tone, platforms, brandContext, contentLocale));
   } catch (err) {
     console.error("[generate] AI error", err);
     await failAgentRun(runId, err instanceof Error ? err.message : "AI call failed");
@@ -112,6 +117,8 @@ export async function POST(req: Request) {
         platforms,
         outputJson: pack,
         title: deriveTitle(text),
+        // Persisted so section regeneration stays in the pack's language.
+        contentLanguage: contentLocale,
       },
     });
 

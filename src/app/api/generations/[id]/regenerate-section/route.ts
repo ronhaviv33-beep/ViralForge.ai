@@ -8,6 +8,7 @@ import { ContentPackSchema } from "@/lib/content-types";
 import { rateLimit } from "@/lib/rate-limit";
 import { startAgentRun, completeAgentRun, failAgentRun } from "@/lib/agent-runs";
 import { getAgentUsageStatus } from "@/lib/agent-limits";
+import { resolveContentLocale } from "@/lib/i18n";
 import { getLocale, getT } from "@/lib/i18n-server";
 
 export const runtime = "nodejs";
@@ -80,6 +81,10 @@ export async function POST(
     );
   }
 
+  // Regenerate in the language the pack was originally generated in. Legacy
+  // generations (no stored language) fall back to the active UI locale.
+  const contentLocale = resolveContentLocale(generation.contentLanguage, locale);
+
   const brandProfile = await getBrandProfile(user.id);
   let brandContext = formatBrandProfileForPrompt(brandProfile);
 
@@ -115,7 +120,7 @@ export async function POST(
         outputJson: pack,
       },
       brandContext,
-      locale
+      contentLocale
     ));
   } catch (err) {
     console.error("[regen-section] AI error", err);

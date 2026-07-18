@@ -277,6 +277,8 @@ export const he: Messages = {
       "הדביקו רעיון, תמלול של סרטון או מחשבה גולמית… ViralForge יהפוך את זה לחבילת תוכן מלאה.",
     toneLabel: "טון",
     selectTone: "בחירת טון",
+    contentLanguageLabel: "שפת התוכן",
+    contentLanguageHint: "באיזו שפה לייצר את התוכן?",
     platformsLabel: "פלטפורמות",
     minInput: "נדרשים לפחות {min} תווים של טקסט.",
     selectPlatform: "בחרו לפחות פלטפורמה אחת.",
@@ -284,6 +286,10 @@ export const he: Messages = {
     generated: "חבילת התוכן נוצרה!",
     generating: "יוצרים את החבילה שלכם…",
     generateCta: "יצירת חבילת תוכן",
+  },
+  languages: {
+    en: "אנגלית",
+    he: "עברית",
   },
   tones: {
     professional: "מקצועי",

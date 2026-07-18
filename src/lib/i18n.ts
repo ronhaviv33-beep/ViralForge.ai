@@ -62,6 +62,19 @@ export function dateLocale(locale: Locale): string {
 }
 
 /**
+ * Resolve the language for AI-generated content.
+ * Precedence: an explicit user choice (form selection or the value stored on
+ * the generation) wins; anything missing/invalid falls back to the UI locale.
+ * This is the single place that decides generation language — keep it that way.
+ */
+export function resolveContentLocale(
+  explicit: string | null | undefined,
+  uiLocale: Locale
+): Locale {
+  return isLocale(explicit) ? explicit : uiLocale;
+}
+
+/**
  * Stored tone values are English (they live in the database and prompts).
  * This maps a stored tone to its translated display label; unknown values
  * fall back to the raw string.

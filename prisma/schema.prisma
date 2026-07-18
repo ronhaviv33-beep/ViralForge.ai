@@ -93,6 +93,9 @@ model Generation {
   platforms  String[]
   outputJson Json
   title      String
+  // Language the pack was generated in ("en" | "he"). Null on legacy rows —
+  // regeneration then falls back to the active UI locale.
+  contentLanguage String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

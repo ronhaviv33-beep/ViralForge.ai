@@ -26,6 +26,9 @@ export const generateSchema = z.object({
     .array(z.enum(PLATFORMS))
     .min(1, "Select at least one platform")
     .max(PLATFORMS.length),
+  // Explicit content-language choice. Optional: when absent the server falls
+  // back to the active UI locale (see resolveContentLocale).
+  contentLanguage: z.enum(["en", "he"]).optional(),
 });
 
 export const brandProfileSchema = z.object({

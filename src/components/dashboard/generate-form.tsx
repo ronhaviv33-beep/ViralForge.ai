@@ -19,14 +19,22 @@ import {
 } from "@/components/ui/select";
 import { ContentPackView } from "@/components/content-pack-view";
 import { cn } from "@/lib/utils";
-import { toneLabel } from "@/lib/i18n";
+import { toneLabel, LOCALES, type Locale } from "@/lib/i18n";
 import { useI18n } from "@/components/i18n-provider";
 
 export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [text, setText] = React.useState("");
   const [tone, setTone] = React.useState<(typeof TONES)[number]>("Founder");
+  // Content language: defaults to the UI locale, but an explicit user choice
+  // wins and stops following the UI language from then on.
+  const [contentLanguage, setContentLanguage] = React.useState<Locale>(locale);
+  const [contentLanguageTouched, setContentLanguageTouched] =
+    React.useState(false);
+  React.useEffect(() => {
+    if (!contentLanguageTouched) setContentLanguage(locale);
+  }, [locale, contentLanguageTouched]);
   const [platforms, setPlatforms] = React.useState<string[]>([
     "Instagram",
     "LinkedIn",
@@ -65,7 +73,12 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.trim(), tone, platforms }),
+        body: JSON.stringify({
+          text: text.trim(),
+          tone,
+          platforms,
+          contentLanguage,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -130,7 +143,7 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
           </div>
         </div>
 
-        {/* Tone */}
+        {/* Tone + content language */}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>{t("generateForm.toneLabel")}</Label>
@@ -150,6 +163,31 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>{t("generateForm.contentLanguageLabel")}</Label>
+            <Select
+              value={contentLanguage}
+              onValueChange={(v) => {
+                setContentLanguage(v as Locale);
+                setContentLanguageTouched(true);
+              }}
+              disabled={loading}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LOCALES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {t(code === "he" ? "languages.he" : "languages.en")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t("generateForm.contentLanguageHint")}
+            </p>
           </div>
         </div>
 

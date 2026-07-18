@@ -281,6 +281,8 @@ export const en = {
       "Paste an idea, a video transcript, a rough thought… ViralForge will turn it into a full content pack.",
     toneLabel: "Tone",
     selectTone: "Select tone",
+    contentLanguageLabel: "Content language",
+    contentLanguageHint: "Choose the language for generated content",
     platformsLabel: "Platforms",
     minInput: "Please add at least {min} characters of input.",
     selectPlatform: "Select at least one platform.",
@@ -288,6 +290,10 @@ export const en = {
     generated: "Content pack generated!",
     generating: "Generating your pack…",
     generateCta: "Generate content pack",
+  },
+  languages: {
+    en: "English",
+    he: "Hebrew",
   },
   tones: {
     professional: "Professional",
