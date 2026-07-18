@@ -52,3 +52,23 @@ services:
       - key: RESEND_FROM_EMAIL
         # e.g. "ViralForge <noreply@yourdomain.com>" — must match a verified Resend sender domain.
         sync: false
+      # Social integrations (optional — a platform without credentials shows as
+      # "Coming soon" in the UI). Redirect URIs to register with each provider:
+      #   {NEXT_PUBLIC_APP_URL}/api/integrations/instagram/callback
+      #   {NEXT_PUBLIC_APP_URL}/api/integrations/youtube/callback
+      #   {NEXT_PUBLIC_APP_URL}/api/integrations/tiktok/callback
+      - key: INSTAGRAM_APP_ID
+        sync: false
+      - key: INSTAGRAM_APP_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: TIKTOK_CLIENT_KEY
+        sync: false
+      - key: TIKTOK_CLIENT_SECRET
+        sync: false
+      # Encrypts stored social tokens at rest (falls back to AUTH_SECRET if unset).
+      - key: SOCIAL_TOKEN_SECRET
+        generateValue: true

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Sparkles, History, Settings, ShieldCheck, BarChart2, Bot } from "lucide-react";
+import { LayoutDashboard, Sparkles, History, Settings, ShieldCheck, BarChart2, Bot, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MessageKey } from "@/lib/i18n";
 import { useI18n } from "@/components/i18n-provider";
@@ -18,6 +18,7 @@ const ITEMS: Array<{
   { href: "/dashboard/history", labelKey: "nav.history", icon: History },
   { href: "/dashboard/analytics", labelKey: "nav.analytics", icon: BarChart2 },
   { href: "/dashboard/creator-agent", labelKey: "nav.creatorAgent", icon: Bot },
+  { href: "/dashboard/integrations", labelKey: "nav.integrations", icon: Plug },
   { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 

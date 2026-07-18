@@ -34,6 +34,12 @@ enum AgentRunStatus {
   error
 }
 
+enum SocialPlatform {
+  instagram
+  youtube
+  tiktok
+}
+
 model User {
   id               String    @id @default(cuid())
   email            String    @unique
@@ -52,6 +58,8 @@ model User {
   brandProfile       BrandProfile?
   verificationTokens VerificationToken[]
   agentRuns          AgentRun[]
+  connectedAccounts  ConnectedAccount[]
+  externalPosts      ExternalPost[]
 }
 
 model VerificationToken {
@@ -101,7 +109,8 @@ model Generation {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  agentRuns AgentRun[]
+  agentRuns     AgentRun[]
+  externalPosts ExternalPost[]
 
   @@index([userId])
   @@index([createdAt])
@@ -171,4 +180,74 @@ model Usage {
 
   @@unique([userId, month])
   @@index([userId])
+}
+
+// A social account the user connected via the platform's official OAuth flow.
+// Tokens are stored encrypted (AES-256-GCM, see src/lib/crypto.ts) — never
+// returned to the client and never logged.
+model ConnectedAccount {
+  id                String         @id @default(cuid())
+  userId            String
+  platform          SocialPlatform
+  externalAccountId String
+  accountName       String?
+  accessToken       String         @db.Text
+  refreshToken      String?        @db.Text
+  tokenExpiresAt    DateTime?
+  status            String         @default("active") // "active" | "error"
+  lastSyncedAt      DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalPosts ExternalPost[]
+
+  @@unique([userId, platform, externalAccountId])
+  @@index([userId])
+}
+
+// Maps a real post on a connected platform (and optionally the ViralForge
+// generation it came from) so performance can be attributed over time.
+model ExternalPost {
+  id                 String         @id @default(cuid())
+  userId             String
+  generationId       String?
+  connectedAccountId String
+  platform           SocialPlatform
+  externalPostId     String
+  externalUrl        String?
+  title              String?
+  publishedAt        DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generation       Generation?      @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  snapshots PostPerformanceSnapshot[]
+
+  @@unique([connectedAccountId, externalPostId])
+  @@index([userId])
+  @@index([generationId])
+}
+
+// Point-in-time metrics for an external post. Fields are nullable because
+// platforms expose different metrics — we store only what each API returns.
+model PostPerformanceSnapshot {
+  id             String   @id @default(cuid())
+  externalPostId String
+  views          Int?
+  likes          Int?
+  comments       Int?
+  shares         Int?
+  saves          Int?
+  reach          Int?
+  engagementRate Float?
+  capturedAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  externalPost ExternalPost @relation(fields: [externalPostId], references: [id], onDelete: Cascade)
+
+  @@index([externalPostId, capturedAt])
 }
