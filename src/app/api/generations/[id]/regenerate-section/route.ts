@@ -7,6 +7,7 @@ import { getBrandProfile, formatBrandProfileForPrompt } from "@/lib/brand-profil
 import { ContentPackSchema } from "@/lib/content-types";
 import { rateLimit } from "@/lib/rate-limit";
 import { startAgentRun, completeAgentRun, failAgentRun } from "@/lib/agent-runs";
+import { getAgentUsageStatus } from "@/lib/agent-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -74,7 +75,16 @@ export async function POST(
   }
 
   const brandProfile = await getBrandProfile(user.id);
-  const brandContext = formatBrandProfileForPrompt(brandProfile);
+  let brandContext = formatBrandProfileForPrompt(brandProfile);
+
+  // Plan gating: when the Creator Agent is blocked (plan or monthly limit),
+  // the section still regenerates — just without personalization.
+  if (brandContext) {
+    const agentStatus = await getAgentUsageStatus(user.id, user.plan);
+    if (agentStatus.blocked) {
+      brandContext = null;
+    }
+  }
 
   // Runtime tracking: only Creator Agent-assisted runs (i.e. profile applied).
   // A null runId (no context, or tracking failure) makes the finalizers no-ops.

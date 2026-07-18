@@ -1,8 +1,16 @@
 import Link from "next/link";
-import { Bot } from "lucide-react";
+import { Bot, Lock } from "lucide-react";
 import type { BrandProfile } from "@prisma/client";
+import type { AgentUsageStatus } from "@/lib/agent-limits";
 
-export function BrandVoiceCard({ profile }: { profile: BrandProfile | null }) {
+export function BrandVoiceCard({
+  profile,
+  agentStatus,
+}: {
+  profile: BrandProfile | null;
+  /** When provided and blocked, the card explains why personalization is off. */
+  agentStatus?: Pick<AgentUsageStatus, "blocked" | "blockedReason">;
+}) {
   // Determine whether the saved profile actually has any displayable content.
   const hasContent =
     profile &&
@@ -39,6 +47,32 @@ export function BrandVoiceCard({ profile }: { profile: BrandProfile | null }) {
           className="shrink-0 text-xs font-medium text-primary hover:underline"
         >
           Set up Creator Agent →
+        </Link>
+      </div>
+    );
+  }
+
+  // Profile exists but the Creator Agent can't be applied right now.
+  if (agentStatus?.blocked) {
+    const isLimit = agentStatus.blockedReason === "limit";
+    return (
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Lock className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <span>
+            <span className="font-medium text-foreground">
+              {isLimit
+                ? "You've reached your Creator Agent limit for this month."
+                : "Creator Agent isn't available on your current plan."}
+            </span>{" "}
+            Your content will still generate — just without your saved style.
+          </span>
+        </div>
+        <Link
+          href="/pricing"
+          className="shrink-0 text-xs font-medium text-primary hover:underline"
+        >
+          Upgrade to keep your style →
         </Link>
       </div>
     );

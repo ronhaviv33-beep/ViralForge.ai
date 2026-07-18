@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUsageStatus } from "@/lib/usage";
+import { getAgentUsageStatus } from "@/lib/agent-limits";
 import { isStripeConfigured } from "@/lib/stripe";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,10 @@ function statusInfo(
 export default async function SettingsPage() {
   const user = await requireUser();
   const plan = user.plan as PlanId;
-  const usage = await getUsageStatus(user.id, user.plan);
+  const [usage, agentUsage] = await Promise.all([
+    getUsageStatus(user.id, user.plan),
+    getAgentUsageStatus(user.id, user.plan),
+  ]);
 
   const subscription = await prisma.subscription.findFirst({
     where: { userId: user.id },
@@ -123,6 +127,14 @@ export default async function SettingsPage() {
                 : `${usage.used} / ${usage.limit}`}
             </span>
           </div>
+          {agentUsage.enabled && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Creator Agent this month</span>
+              <span className="font-medium">
+                {agentUsage.used} / {agentUsage.limit}
+              </span>
+            </div>
+          )}
           {subscription?.currentPeriodEnd && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">
