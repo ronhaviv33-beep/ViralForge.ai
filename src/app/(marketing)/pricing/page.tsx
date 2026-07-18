@@ -4,43 +4,32 @@ import { PricingTable } from "@/components/marketing/pricing-table";
 import { CheckoutToast } from "@/components/dashboard/checkout-toast";
 import { getCurrentUser } from "@/lib/auth";
 import type { PlanId } from "@/lib/plans";
+import type { MessageKey } from "@/lib/i18n";
+import { getT } from "@/lib/i18n-server";
 
 export const metadata: Metadata = {
   title: "Pricing — ViralForge",
   description: "Simple, transparent pricing. Start free, upgrade when ready.",
 };
 
-const FAQS = [
-  {
-    q: "What counts as a generation?",
-    a: "Every time you turn an idea into a full content pack, that's one generation. Your full content package — hooks, captions, threads, hashtags and more — counts as a single generation.",
-  },
-  {
-    q: "Can I change plans later?",
-    a: "Yes. You can upgrade or downgrade at any time from your settings. Changes take effect immediately and billing is prorated by Stripe.",
-  },
-  {
-    q: "Do unused generations roll over?",
-    a: "No. Generation limits reset at the start of each calendar month.",
-  },
-  {
-    q: "What happens on the Agency plan?",
-    a: "Agency includes everything in Pro with unlimited generations. Multi-brand workspace support is coming soon.",
-  },
+const FAQS: Array<{ q: MessageKey; a: MessageKey }> = [
+  { q: "pricingPage.faq1Q", a: "pricingPage.faq1A" },
+  { q: "pricingPage.faq2Q", a: "pricingPage.faq2A" },
+  { q: "pricingPage.faq3Q", a: "pricingPage.faq3A" },
+  { q: "pricingPage.faq4Q", a: "pricingPage.faq4A" },
 ];
 
 export default async function PricingPage() {
   const user = await getCurrentUser();
+  const t = await getT();
   return (
     <div className="container py-20">
       <Suspense>
         <CheckoutToast />
       </Suspense>
       <div className="mx-auto mb-14 max-w-2xl text-center">
-        <h1 className="text-4xl font-bold sm:text-5xl">Pricing</h1>
-        <p className="mt-4 text-muted-foreground">
-          Start free with 3 generations. Upgrade any time to create more.
-        </p>
+        <h1 className="text-4xl font-bold sm:text-5xl">{t("pricingPage.title")}</h1>
+        <p className="mt-4 text-muted-foreground">{t("pricingPage.subtitle")}</p>
       </div>
 
       <PricingTable
@@ -50,7 +39,7 @@ export default async function PricingPage() {
 
       <div className="mx-auto mt-24 max-w-3xl">
         <h2 className="mb-8 text-center text-2xl font-bold">
-          Frequently asked questions
+          {t("pricingPage.faqTitle")}
         </h2>
         <div className="space-y-4">
           {FAQS.map((faq) => (
@@ -58,8 +47,8 @@ export default async function PricingPage() {
               key={faq.q}
               className="rounded-xl border border-border bg-card p-6"
             >
-              <h3 className="font-semibold">{faq.q}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{faq.a}</p>
+              <h3 className="font-semibold">{t(faq.q)}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{t(faq.a)}</p>
             </div>
           ))}
         </div>

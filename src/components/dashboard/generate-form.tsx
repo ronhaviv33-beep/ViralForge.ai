@@ -19,12 +19,12 @@ import {
 } from "@/components/ui/select";
 import { ContentPackView } from "@/components/content-pack-view";
 import { cn } from "@/lib/utils";
-
-const EXAMPLE =
-  "We just launched a feature that turns long YouTube videos into 20 short clips automatically using AI. It saves creators ~6 hours of editing per video.";
+import { toneLabel } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
 export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [text, setText] = React.useState("");
   const [tone, setTone] = React.useState<(typeof TONES)[number]>("Founder");
   const [platforms, setPlatforms] = React.useState<string[]>([
@@ -51,11 +51,11 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
     setError(null);
 
     if (text.trim().length < MIN_INPUT_CHARS) {
-      setError(`Please add at least ${MIN_INPUT_CHARS} characters of input.`);
+      setError(t("generateForm.minInput", { min: MIN_INPUT_CHARS }));
       return;
     }
     if (platforms.length === 0) {
-      setError("Select at least one platform.");
+      setError(t("generateForm.selectPlatform"));
       return;
     }
 
@@ -69,17 +69,17 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Something went wrong.");
+        setError(data.error || t("errors.somethingWentWrong"));
         if (data.code === "LIMIT_REACHED") {
-          toast.error("Monthly limit reached. Upgrade to keep generating.");
+          toast.error(t("generateForm.limitToast"));
         }
         return;
       }
       setResult({ id: data.id, pack: data.output, title: text.trim().slice(0, 60), platforms });
-      toast.success("Content pack generated!");
+      toast.success(t("generateForm.generated"));
       router.refresh(); // refresh usage meter
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("errors.networkError"));
     } finally {
       setLoading(false);
     }
@@ -93,13 +93,13 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
             <div>
               <p className="font-medium text-destructive">
-                You&apos;ve reached your monthly generation limit.
+                {t("generateForm.limitTitle")}
               </p>
               <p className="mt-1 text-muted-foreground">
                 <Link href="/pricing" className="text-primary hover:underline">
-                  Upgrade your plan
+                  {t("generateForm.upgradeYourPlan")}
                 </Link>{" "}
-                to keep creating content.
+                {t("generateForm.limitBody")}
               </p>
             </div>
           </div>
@@ -108,20 +108,20 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
         {/* Input */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="input">Your idea, transcript, or text</Label>
+            <Label htmlFor="input">{t("generateForm.inputLabel")}</Label>
             <button
               type="button"
-              onClick={() => setText(EXAMPLE)}
+              onClick={() => setText(t("generateForm.exampleText"))}
               className="text-xs text-primary hover:underline"
             >
-              Use example
+              {t("generateForm.useExample")}
             </button>
           </div>
           <Textarea
             id="input"
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, MAX_INPUT_CHARS))}
-            placeholder="Paste an idea, a video transcript, a rough thought… ViralForge will turn it into a full content pack."
+            placeholder={t("generateForm.inputPlaceholder")}
             className="min-h-[160px]"
             disabled={loading}
           />
@@ -133,19 +133,19 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
         {/* Tone */}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Tone</Label>
+            <Label>{t("generateForm.toneLabel")}</Label>
             <Select
               value={tone}
               onValueChange={(v) => setTone(v as (typeof TONES)[number])}
               disabled={loading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select tone" />
+                <SelectValue placeholder={t("generateForm.selectTone")} />
               </SelectTrigger>
               <SelectContent>
-                {TONES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
+                {TONES.map((toneOption) => (
+                  <SelectItem key={toneOption} value={toneOption}>
+                    {toneLabel(t, toneOption)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -155,7 +155,7 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
 
         {/* Platforms */}
         <div className="mt-4 space-y-2">
-          <Label>Platforms</Label>
+          <Label>{t("generateForm.platformsLabel")}</Label>
           <div className="flex flex-wrap gap-2">
             {PLATFORMS.map((p) => {
               const active = platforms.includes(p);
@@ -193,11 +193,11 @@ export function GenerateForm({ canGenerate }: { canGenerate: boolean }) {
         >
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Generating your pack…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("generateForm.generating")}
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4" /> Generate content pack
+              <Sparkles className="h-4 w-4" /> {t("generateForm.generateCta")}
             </>
           )}
         </Button>

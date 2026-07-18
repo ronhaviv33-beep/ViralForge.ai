@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/auth";
 import { AuthForm } from "@/components/auth/auth-form";
+import { getT } from "@/lib/i18n-server";
 
 export const metadata: Metadata = {
   title: "Log in — ViralForge",
@@ -11,13 +12,14 @@ export const metadata: Metadata = {
 export default async function LoginPage() {
   const userId = await getSessionUserId();
   if (userId) redirect("/dashboard");
+  const t = await getT();
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
+        <h1 className="text-2xl font-bold">{t("auth.loginTitle")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Log in to your ViralForge account.
+          {t("auth.loginSubtitle")}
         </p>
       </div>
       <Suspense>

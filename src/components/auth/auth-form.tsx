@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/components/i18n-provider";
 
 interface AuthFormProps {
   mode: "login" | "signup";
@@ -16,6 +17,7 @@ interface AuthFormProps {
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -27,12 +29,12 @@ export function AuthForm({ mode }: AuthFormProps) {
       const verified = searchParams.get("verified");
       const reset = searchParams.get("reset");
       if (verified === "true") {
-        toast.success("Email verified! You can now log in.");
+        toast.success(t("auth.verifiedSuccess"));
       } else if (verified === "error") {
-        toast.error("Verification link is invalid or has expired.");
+        toast.error(t("auth.verifiedError"));
       }
       if (reset === "true") {
-        toast.success("Password updated! Log in with your new password.");
+        toast.success(t("auth.resetSuccessLogin"));
       }
     }
     // Run once on mount only.
@@ -59,11 +61,11 @@ export function AuthForm({ mode }: AuthFormProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Something went wrong.");
+        setError(data.error || t("errors.somethingWentWrong"));
         setLoading(false);
         return;
       }
-      toast.success(isSignup ? "Account created!" : "Welcome back!");
+      toast.success(isSignup ? t("auth.accountCreated") : t("auth.welcomeBack"));
 
       // If a plan was pre-selected from pricing, send to pricing to check out.
       const plan = searchParams.get("plan");
@@ -74,7 +76,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
       router.refresh();
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("errors.networkError"));
       setLoading(false);
     }
   }
@@ -83,30 +85,35 @@ export function AuthForm({ mode }: AuthFormProps) {
     <form onSubmit={onSubmit} className="space-y-4">
       {isSignup && (
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" placeholder="Jane Creator" autoComplete="name" />
+          <Label htmlFor="name">{t("auth.name")}</Label>
+          <Input
+            id="name"
+            name="name"
+            placeholder={t("auth.namePlaceholder")}
+            autoComplete="name"
+          />
         </div>
       )}
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.email")}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           required
-          placeholder="you@example.com"
+          placeholder={t("auth.emailPlaceholder")}
           autoComplete="email"
         />
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("auth.password")}</Label>
           {!isSignup && (
             <Link
               href="/forgot-password"
               className="text-xs text-muted-foreground hover:text-foreground"
             >
-              Forgot password?
+              {t("auth.forgotPassword")}
             </Link>
           )}
         </div>
@@ -115,7 +122,11 @@ export function AuthForm({ mode }: AuthFormProps) {
           name="password"
           type="password"
           required
-          placeholder={isSignup ? "At least 8 characters" : "Your password"}
+          placeholder={
+            isSignup
+              ? t("auth.passwordPlaceholderSignup")
+              : t("auth.passwordPlaceholderLogin")
+          }
           autoComplete={isSignup ? "new-password" : "current-password"}
         />
       </div>
@@ -128,22 +139,22 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {isSignup ? "Create account" : "Log in"}
+        {isSignup ? t("auth.createAccount") : t("marketing.login")}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         {isSignup ? (
           <>
-            Already have an account?{" "}
+            {t("auth.haveAccount")}{" "}
             <Link href="/login" className="text-primary hover:underline">
-              Log in
+              {t("marketing.login")}
             </Link>
           </>
         ) : (
           <>
-            Don&apos;t have an account?{" "}
+            {t("auth.noAccount")}{" "}
             <Link href="/signup" className="text-primary hover:underline">
-              Sign up free
+              {t("auth.signupFree")}
             </Link>
           </>
         )}

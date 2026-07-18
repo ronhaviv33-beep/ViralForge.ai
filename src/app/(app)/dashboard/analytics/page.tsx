@@ -16,6 +16,8 @@ import { PLANS, type PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { GenerationCard } from "@/components/dashboard/generation-card";
+import { toneLabel } from "@/lib/i18n";
+import { getT } from "@/lib/i18n-server";
 
 function buildActivityGrid(
   data: { date: string; count: number }[]
@@ -43,50 +45,66 @@ export const metadata: Metadata = {
 export default async function AnalyticsPage() {
   const user = await requireUser();
   const plan = user.plan as PlanId;
+  const t = await getT();
   const analytics = await getUserAnalytics(user.id, user.plan);
 
   const stats = [
     {
-      label: "Generated this month",
+      label: t("dashboard.stats.generatedThisMonth"),
       value: String(analytics.generatedThisMonth),
       hint: analytics.unlimited
-        ? "Unlimited plan"
-        : `of ${PLANS[plan].limit} on ${PLANS[plan].name}`,
+        ? t("dashboard.stats.unlimitedPlan")
+        : t("dashboard.stats.ofLimitOnPlan", {
+            limit: PLANS[plan].limit,
+            plan: PLANS[plan].name,
+          }),
       icon: Calendar,
       accent: "primary" as const,
     },
     {
-      label: "Credits remaining",
-      value: analytics.unlimited ? "Unlimited" : String(analytics.creditsRemaining),
-      hint: analytics.unlimited ? `${PLANS[plan].name} plan` : "Resets at month start",
+      label: t("dashboard.stats.creditsRemaining"),
+      value: analytics.unlimited
+        ? t("usage.unlimited")
+        : String(analytics.creditsRemaining),
+      hint: analytics.unlimited
+        ? t("common.planLabel", { plan: PLANS[plan].name })
+        : t("dashboard.stats.resetsMonthStart"),
       icon: Gauge,
       accent: "accent" as const,
     },
     {
-      label: "Estimated hours saved",
-      value: `${analytics.estimatedHoursSaved}h`,
-      hint: "≈ 2 hours per content pack",
+      label: t("dashboard.stats.hoursSaved"),
+      value: t("dashboard.stats.hoursValue", {
+        h: analytics.estimatedHoursSaved,
+      }),
+      hint: t("dashboard.stats.hoursSavedHint"),
       icon: Clock,
       accent: "accent" as const,
     },
     {
-      label: "Favorite tone",
-      value: analytics.mostUsedTone ?? "No data yet",
-      hint: analytics.mostUsedTone ? "Your go-to voice" : "Generate to see insights",
+      label: t("analyticsPage.favoriteTone"),
+      value: analytics.mostUsedTone
+        ? toneLabel(t, analytics.mostUsedTone)
+        : t("analyticsPage.noDataYet"),
+      hint: analytics.mostUsedTone
+        ? t("dashboard.stats.goToVoice")
+        : t("analyticsPage.generateToSee"),
       icon: MessageSquare,
       accent: "primary" as const,
     },
     {
-      label: "Favorite platform",
-      value: analytics.mostUsedPlatform ?? "No data yet",
-      hint: analytics.mostUsedPlatform ? "Where you create most" : "Generate to see insights",
+      label: t("analyticsPage.favoritePlatform"),
+      value: analytics.mostUsedPlatform ?? t("analyticsPage.noDataYet"),
+      hint: analytics.mostUsedPlatform
+        ? t("dashboard.stats.whereYouCreate")
+        : t("analyticsPage.generateToSee"),
       icon: Share2,
       accent: "primary" as const,
     },
     {
-      label: "Total content packs",
+      label: t("dashboard.stats.totalPacks"),
       value: String(analytics.totalPacks),
-      hint: "All time",
+      hint: t("dashboard.stats.allTime"),
       icon: History,
       accent: "primary" as const,
     },
@@ -95,10 +113,8 @@ export default async function AnalyticsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Analytics</h1>
-        <p className="mt-1 text-muted-foreground">
-          Your content creation stats at a glance.
-        </p>
+        <h1 className="text-2xl font-bold">{t("analyticsPage.title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("analyticsPage.subtitle")}</p>
       </div>
 
       {/* Stats */}
@@ -122,9 +138,13 @@ export default async function AnalyticsPage() {
         return (
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Last 30 days</h2>
+              <h2 className="text-lg font-semibold">
+                {t("analyticsPage.last30Days")}
+              </h2>
               <span className="text-sm text-muted-foreground">
-                {total30d} generation{total30d !== 1 ? "s" : ""}
+                {total30d === 1
+                  ? t("analyticsPage.generationsOne")
+                  : t("analyticsPage.generationsMany", { count: total30d })}
               </span>
             </div>
             <div className="rounded-2xl border border-border bg-card/40 p-4">
@@ -132,7 +152,11 @@ export default async function AnalyticsPage() {
                 {grid.map(({ date, count }) => (
                   <div
                     key={date}
-                    title={`${date}: ${count} generation${count !== 1 ? "s" : ""}`}
+                    title={`${date}: ${
+                      count === 1
+                        ? t("analyticsPage.generationsOne")
+                        : t("analyticsPage.generationsMany", { count })
+                    }`}
                     className={cn(
                       "h-6 flex-1 rounded-sm transition-colors",
                       activityColor(count)
@@ -141,8 +165,8 @@ export default async function AnalyticsPage() {
                 ))}
               </div>
               <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                <span>30 days ago</span>
-                <span>Today</span>
+                <span>{t("analyticsPage.daysAgo30")}</span>
+                <span>{t("analyticsPage.today")}</span>
               </div>
             </div>
           </div>
@@ -154,10 +178,14 @@ export default async function AnalyticsPage() {
         <div className="grid gap-6 sm:grid-cols-2">
           {/* Platforms */}
           <div>
-            <h2 className="mb-4 text-lg font-semibold">Platforms</h2>
+            <h2 className="mb-4 text-lg font-semibold">
+              {t("analyticsPage.platforms")}
+            </h2>
             <div className="rounded-2xl border border-border bg-card/40 p-4 space-y-3">
               {analytics.platformBreakdown.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No data yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("analyticsPage.noDataDot")}
+                </p>
               ) : (
                 analytics.platformBreakdown.map(({ platform, count }) => {
                   const pct = Math.round(
@@ -184,10 +212,14 @@ export default async function AnalyticsPage() {
 
           {/* Tones */}
           <div>
-            <h2 className="mb-4 text-lg font-semibold">Tones</h2>
+            <h2 className="mb-4 text-lg font-semibold">
+              {t("analyticsPage.tones")}
+            </h2>
             <div className="rounded-2xl border border-border bg-card/40 p-4 space-y-3">
               {analytics.toneBreakdown.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No data yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("analyticsPage.noDataDot")}
+                </p>
               ) : (
                 analytics.toneBreakdown.map(({ tone, count }) => {
                   const pct = Math.round(
@@ -196,7 +228,7 @@ export default async function AnalyticsPage() {
                   return (
                     <div key={tone}>
                       <div className="mb-1 flex justify-between text-sm">
-                        <span className="font-medium">{tone}</span>
+                        <span className="font-medium">{toneLabel(t, tone)}</span>
                         <span className="text-muted-foreground">{count}</span>
                       </div>
                       <div className="h-2 rounded-full bg-secondary">
@@ -217,10 +249,12 @@ export default async function AnalyticsPage() {
       {/* Recent generations */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Recent generations</h2>
+          <h2 className="text-lg font-semibold">
+            {t("dashboard.recentGenerations")}
+          </h2>
           {analytics.totalPacks > 0 && (
             <Button asChild variant="ghost" size="sm">
-              <Link href="/dashboard/history">View all</Link>
+              <Link href="/dashboard/history">{t("common.viewAll")}</Link>
             </Button>
           )}
         </div>
@@ -230,14 +264,13 @@ export default async function AnalyticsPage() {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Sparkles className="h-6 w-6" />
             </div>
-            <h3 className="font-semibold">No generations yet</h3>
+            <h3 className="font-semibold">{t("dashboard.emptyTitle")}</h3>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-              Your analytics will fill in as you create content packs. Start
-              generating to see your stats.
+              {t("analyticsPage.emptyBody")}
             </p>
             <Button asChild className="mt-5">
               <Link href="/dashboard/generate">
-                <Sparkles className="h-4 w-4" /> Create your first pack
+                <Sparkles className="h-4 w-4" /> {t("dashboard.createFirstPack")}
               </Link>
             </Button>
           </div>

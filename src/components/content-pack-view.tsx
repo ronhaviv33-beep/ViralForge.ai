@@ -24,6 +24,8 @@ import {
   slugify,
 } from "@/lib/export";
 import { cn } from "@/lib/utils";
+import type { MessageKey, Translator } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
 interface ContentPackViewProps {
   pack: ContentPack;
@@ -37,7 +39,63 @@ interface ContentPackViewProps {
   generationId?: string;
 }
 
+/** Translated label/description per pack section, keyed by ContentPack field. */
+const SECTION_KEYS: Record<
+  keyof ContentPack,
+  { label: MessageKey; description: MessageKey }
+> = {
+  hooks: {
+    label: "contentPack.sections.hooks.label",
+    description: "contentPack.sections.hooks.description",
+  },
+  instagramCaption: {
+    label: "contentPack.sections.instagramCaption.label",
+    description: "contentPack.sections.instagramCaption.description",
+  },
+  tiktokCaption: {
+    label: "contentPack.sections.tiktokCaption.label",
+    description: "contentPack.sections.tiktokCaption.description",
+  },
+  linkedinPost: {
+    label: "contentPack.sections.linkedinPost.label",
+    description: "contentPack.sections.linkedinPost.description",
+  },
+  xThread: {
+    label: "contentPack.sections.xThread.label",
+    description: "contentPack.sections.xThread.description",
+  },
+  newsletterDraft: {
+    label: "contentPack.sections.newsletterDraft.label",
+    description: "contentPack.sections.newsletterDraft.description",
+  },
+  blogOutline: {
+    label: "contentPack.sections.blogOutline.label",
+    description: "contentPack.sections.blogOutline.description",
+  },
+  hashtags: {
+    label: "contentPack.sections.hashtags.label",
+    description: "contentPack.sections.hashtags.description",
+  },
+  ctaOptions: {
+    label: "contentPack.sections.ctaOptions.label",
+    description: "contentPack.sections.ctaOptions.description",
+  },
+  contentIdeas: {
+    label: "contentPack.sections.contentIdeas.label",
+    description: "contentPack.sections.contentIdeas.description",
+  },
+  carousel: {
+    label: "contentPack.sections.carousel.label",
+    description: "contentPack.sections.carousel.description",
+  },
+};
+
+function sectionLabel(t: Translator, key: keyof ContentPack): string {
+  return t(SECTION_KEYS[key].label);
+}
+
 export function ContentPackView({ pack, title, platforms, generationId }: ContentPackViewProps) {
+  const { t } = useI18n();
   // Track the current pack internally so regenerated sections update in place.
   const [currentPack, setCurrentPack] = React.useState<ContentPack>(pack);
   // Per-section loading state — only one section regenerates at a time per key.
@@ -68,7 +126,7 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
     } else {
       downloadFile(`${base}.md`, packToMarkdown(currentPack, title), "text/markdown");
     }
-    toast.success(`Exported as .${format}`);
+    toast.success(t("contentPack.exported", { format }));
   }
 
   async function handleRegenerate(section: keyof ContentPack) {
@@ -86,14 +144,15 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
       );
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to regenerate section.");
+        toast.error(data.error || t("contentPack.regenerateFailed"));
         return;
       }
       setCurrentPack((prev) => ({ ...prev, [section]: data.value }));
-      const label = SECTIONS.find((s) => s.key === section)?.label ?? section;
-      toast.success(`${label} regenerated.`);
+      toast.success(
+        t("contentPack.regenerated", { label: sectionLabel(t, section) })
+      );
     } catch {
-      toast.error("Network error. Please try again.");
+      toast.error(t("errors.networkError"));
     } finally {
       setRegenerating((prev) => ({ ...prev, [section]: false }));
     }
@@ -104,30 +163,30 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/60 p-4">
         <div>
-          <p className="text-sm font-medium">Your content pack is ready</p>
+          <p className="text-sm font-medium">{t("contentPack.ready")}</p>
           <p className="text-xs text-muted-foreground">
-            {visibleSections.length} sections · copy any block or export the whole pack
+            {t("contentPack.readyHint", { count: visibleSections.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <CopyButton
             value={allText}
-            label="Copy all"
+            label={t("contentPack.copyAll")}
             variant="secondary"
             size="default"
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
-                <Download className="h-4 w-4" /> Export
+                <Download className="h-4 w-4" /> {t("contentPack.export")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleExport("txt")}>
-                <FileText className="h-4 w-4" /> Export as .txt
+                <FileText className="h-4 w-4" /> {t("contentPack.exportTxt")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("md")}>
-                <FileType className="h-4 w-4" /> Export as .md
+                <FileType className="h-4 w-4" /> {t("contentPack.exportMd")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -142,9 +201,9 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
             <Card key={section.key} className="flex flex-col">
               <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
                 <div>
-                  <h3 className="font-semibold">{section.label}</h3>
+                  <h3 className="font-semibold">{sectionLabel(t, section.key)}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {section.description}
+                    {t(SECTION_KEYS[section.key].description)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
@@ -154,7 +213,9 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
                         handleRegenerate(section.key as RegeneratableSection)
                       }
                       disabled={isRegenerating}
-                      title={`Regenerate ${section.label}`}
+                      title={t("contentPack.regenerateTitle", {
+                        label: sectionLabel(t, section.key),
+                      })}
                       className={cn(
                         "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors",
                         "hover:bg-secondary hover:text-foreground disabled:opacity-40"
@@ -172,7 +233,7 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
-                <SectionBody section={section.key} pack={currentPack} />
+                <SectionBody section={section.key} pack={currentPack} t={t} />
               </CardContent>
             </Card>
           );
@@ -185,9 +246,11 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
 function SectionBody({
   section,
   pack,
+  t,
 }: {
   section: keyof ContentPack;
   pack: ContentPack;
+  t: Translator;
 }) {
   const value = pack[section];
 
@@ -200,7 +263,9 @@ function SectionBody({
             className="rounded-lg border border-border bg-background/40 p-3"
           >
             <div className="mb-1 flex items-center gap-2">
-              <Badge variant="secondary">Slide {slide.slide}</Badge>
+              <Badge variant="secondary">
+                {t("contentPack.slide", { n: slide.slide })}
+              </Badge>
               <span className="text-sm font-medium">{slide.title}</span>
             </div>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">

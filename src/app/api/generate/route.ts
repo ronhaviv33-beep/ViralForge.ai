@@ -8,11 +8,17 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getBrandProfile, formatBrandProfileForPrompt } from "@/lib/brand-profile";
 import { startAgentRun, completeAgentRun, failAgentRun } from "@/lib/agent-runs";
 import { getAgentUsageStatus } from "@/lib/agent-limits";
+import { getLocale, getT } from "@/lib/i18n-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  // Active site locale (vf_locale cookie): drives both the language of the
+  // generated content and the language of user-facing error messages.
+  const locale = await getLocale();
+  const t = await getT();
+
   let user;
   try {
     user = await requireUser();
@@ -24,7 +30,7 @@ export async function POST(req: Request) {
   const rl = rateLimit(`generate:${user.id}`, 8, 60_000);
   if (!rl.success) {
     return NextResponse.json(
-      { error: "You're generating too fast. Please wait a moment." },
+      { error: t("apiErrors.tooFast") },
       { status: 429 }
     );
   }
@@ -49,8 +55,7 @@ export async function POST(req: Request) {
   if (!usage.canGenerate) {
     return NextResponse.json(
       {
-        error:
-          "You've reached your monthly generation limit. Upgrade your plan to keep creating.",
+        error: t("apiErrors.limitReached"),
         code: "LIMIT_REACHED",
       },
       { status: 402 }
@@ -87,14 +92,14 @@ export async function POST(req: Request) {
   let pack;
   let meta;
   try {
-    ({ pack, meta } = await generateContentPack(text, tone, platforms, brandContext));
+    ({ pack, meta } = await generateContentPack(text, tone, platforms, brandContext, locale));
   } catch (err) {
     console.error("[generate] AI error", err);
     await failAgentRun(runId, err instanceof Error ? err.message : "AI call failed");
     const message =
       err instanceof Error && err.message.startsWith("OPENAI")
-        ? "AI service is not configured. Please contact support."
-        : "We couldn't generate your content. Please try again.";
+        ? t("apiErrors.aiNotConfigured")
+        : t("apiErrors.generateFailed");
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
@@ -127,7 +132,7 @@ export async function POST(req: Request) {
     // successful run without a generation link.
     await completeAgentRun(runId, meta);
     return NextResponse.json(
-      { error: "Generated, but failed to save. Please try again." },
+      { error: t("apiErrors.generateSaveFailed") },
       { status: 500 }
     );
   }

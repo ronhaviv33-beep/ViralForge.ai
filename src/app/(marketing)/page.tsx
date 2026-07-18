@@ -20,68 +20,39 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PricingTable } from "@/components/marketing/pricing-table";
 import { TONES, PLATFORMS } from "@/lib/constants";
+import { toneLabel, type MessageKey } from "@/lib/i18n";
+import { getT } from "@/lib/i18n-server";
 
-const FEATURES = [
-  {
-    icon: Lightbulb,
-    title: "Viral Idea Generator",
-    desc: "10 fresh content angles from a single topic so you never run out of ideas.",
-  },
-  {
-    icon: FileText,
-    title: "Script Generator",
-    desc: "Full short-form scripts structured to hook, hold and convert.",
-  },
-  {
-    icon: Sparkles,
-    title: "Hook Generator",
-    desc: "10 scroll-stopping opening lines engineered to win the first 3 seconds.",
-  },
-  {
-    icon: PenLine,
-    title: "Caption Writer",
-    desc: "Platform-native captions for Instagram and TikTok, emoji-aware.",
-  },
-  {
-    icon: CalendarDays,
-    title: "Content Calendar",
-    desc: "A 30-day posting plan built around your generated content.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Viral Frameworks",
-    desc: "Proven formats (storytelling, listicle, controversy, how-to) applied to your idea.",
-  },
-  {
-    icon: LayoutGrid,
-    title: "Carousel Creator",
-    desc: "5-slide carousel scripts ready to turn into visuals.",
-  },
+const FEATURES: Array<{
+  icon: React.ComponentType<{ className?: string }>;
+  titleKey: MessageKey;
+  descKey: MessageKey;
+}> = [
+  { icon: Lightbulb, titleKey: "landing.feature1Title", descKey: "landing.feature1Desc" },
+  { icon: FileText, titleKey: "landing.feature2Title", descKey: "landing.feature2Desc" },
+  { icon: Sparkles, titleKey: "landing.feature3Title", descKey: "landing.feature3Desc" },
+  { icon: PenLine, titleKey: "landing.feature4Title", descKey: "landing.feature4Desc" },
+  { icon: CalendarDays, titleKey: "landing.feature5Title", descKey: "landing.feature5Desc" },
+  { icon: TrendingUp, titleKey: "landing.feature6Title", descKey: "landing.feature6Desc" },
+  { icon: LayoutGrid, titleKey: "landing.feature7Title", descKey: "landing.feature7Desc" },
 ];
 
-const STEPS = [
-  {
-    title: "Drop in your idea",
-    desc: "Paste any idea, topic, or transcript — even a rough thought works.",
-  },
-  {
-    title: "Choose your style",
-    desc: "Pick your tone (casual, bold, educational…) and the platforms you post on.",
-  },
-  {
-    title: "Get your content kit",
-    desc: "Hooks, scripts, captions, threads, hashtags and more — all in one click.",
-  },
+const STEPS: Array<{ titleKey: MessageKey; descKey: MessageKey }> = [
+  { titleKey: "landing.step1Title", descKey: "landing.step1Desc" },
+  { titleKey: "landing.step2Title", descKey: "landing.step2Desc" },
+  { titleKey: "landing.step3Title", descKey: "landing.step3Desc" },
 ];
 
-const PAIN_POINTS = [
-  "Thinking of ideas",
-  "Writing captions",
-  "Planning content",
-  "Staying consistent",
+const PAIN_POINTS: MessageKey[] = [
+  "landing.pain1",
+  "landing.pain2",
+  "landing.pain3",
+  "landing.pain4",
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const t = await getT();
+
   return (
     <>
       {/* Hero */}
@@ -91,28 +62,27 @@ export default function LandingPage() {
         <div className="container relative flex flex-col items-center py-24 text-center md:py-32">
           <Badge variant="outline" className="mb-6 gap-1.5 py-1.5">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
-            AI content engine built for creators who want to grow faster
+            {t("landing.badge")}
           </Badge>
           <h1 className="max-w-4xl text-balance text-4xl font-bold tracking-tight sm:text-6xl md:text-7xl">
-            Create content faster.{" "}
-            <span className="gradient-text">Grow your audience smarter.</span>
+            {t("landing.heroTitle1")}{" "}
+            <span className="gradient-text">{t("landing.heroTitle2")}</span>
           </h1>
           <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground sm:text-xl">
-            ViralForge helps creators generate ideas, scripts, hooks and viral
-            content workflows in seconds.
+            {t("landing.heroSubtitle")}
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
             <Button asChild size="lg" className="glow-primary">
               <Link href="/signup">
-                Start Free <ArrowRight className="h-4 w-4" />
+                {t("marketing.startFree")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/#examples">See Examples</Link>
+              <Link href="/#examples">{t("landing.seeExamples")}</Link>
             </Button>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            No credit card required · 3 free generations
+            {t("landing.heroNote")}
           </p>
         </div>
       </section>
@@ -123,29 +93,28 @@ export default function LandingPage() {
           <div className="mx-auto grid max-w-4xl items-center gap-12 md:grid-cols-2">
             <div>
               <h2 className="text-3xl font-bold sm:text-4xl">
-                Creators spend hours on things that should take{" "}
-                <span className="gradient-text">seconds.</span>
+                {t("landing.problemTitle1")}{" "}
+                <span className="gradient-text">{t("landing.problemTitle2")}</span>
               </h2>
               <p className="mt-4 text-muted-foreground">
-                Every week, creators lose hours to the content grind. ViralForge
-                handles it all — so you can focus on growing.
+                {t("landing.problemSubtitle")}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {PAIN_POINTS.map((point) => (
+              {PAIN_POINTS.map((pointKey) => (
                 <div
-                  key={point}
+                  key={pointKey}
                   className="flex items-center gap-3 rounded-xl border border-border bg-card p-4"
                 >
                   <XCircle className="h-4 w-4 shrink-0 text-destructive/70" />
-                  <span className="text-sm font-medium">{point}</span>
+                  <span className="text-sm font-medium">{t(pointKey)}</span>
                 </div>
               ))}
             </div>
           </div>
           <p className="mt-10 text-center text-sm font-medium text-muted-foreground">
-            ViralForge does all of it —{" "}
-            <span className="text-accent">in one click.</span>
+            {t("landing.problemFooter1")}{" "}
+            <span className="text-accent">{t("landing.problemFooter2")}</span>
           </p>
         </div>
       </section>
@@ -154,39 +123,40 @@ export default function LandingPage() {
       <section id="features" className="container py-20">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <h2 className="text-3xl font-bold sm:text-4xl">
-            Everything a creator needs to grow
+            {t("landing.featuresTitle")}
           </h2>
           <p className="mt-4 text-muted-foreground">
-            One generation gives you a complete content kit — ready to post
-            across every platform.
+            {t("landing.featuresSubtitle")}
           </p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature) => (
             <div
-              key={feature.title}
+              key={feature.titleKey}
               className="group rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/50"
             >
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                 <feature.icon className="h-5 w-5" />
               </div>
-              <h3 className="font-semibold">{feature.title}</h3>
+              <h3 className="font-semibold">{t(feature.titleKey)}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                {feature.desc}
+                {t(feature.descKey)}
               </p>
             </div>
           ))}
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Also includes:</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1">
-            <Mail className="h-3.5 w-3.5" /> Newsletter draft
+          <span className="font-medium text-foreground">
+            {t("landing.alsoIncludes")}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1">
-            <Hash className="h-3.5 w-3.5" /> Hashtag set
+            <Mail className="h-3.5 w-3.5" /> {t("landing.newsletterDraft")}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1">
-            <Sparkles className="h-3.5 w-3.5" /> Blog outline
+            <Hash className="h-3.5 w-3.5" /> {t("landing.hashtagSet")}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1">
+            <Sparkles className="h-3.5 w-3.5" /> {t("landing.blogOutline")}
           </span>
         </div>
       </section>
@@ -196,21 +166,21 @@ export default function LandingPage() {
         <div className="container">
           <div className="mx-auto mb-14 max-w-2xl text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">
-              From idea to content kit in under 60 seconds
+              {t("landing.howTitle")}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {STEPS.map((step, i) => (
               <div
-                key={step.title}
+                key={step.titleKey}
                 className="relative rounded-xl border border-border bg-card p-6"
               >
                 <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                   {i + 1}
                 </div>
-                <h3 className="font-semibold">{step.title}</h3>
+                <h3 className="font-semibold">{t(step.titleKey)}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {step.desc}
+                  {t(step.descKey)}
                 </p>
               </div>
             ))}
@@ -222,7 +192,7 @@ export default function LandingPage() {
                 key={tone}
                 className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground"
               >
-                {tone}
+                {toneLabel(t, tone)}
               </span>
             ))}
             <span className="mx-2 text-border">|</span>
@@ -242,10 +212,10 @@ export default function LandingPage() {
       <section id="examples" className="container py-20">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <h2 className="text-3xl font-bold sm:text-4xl">
-            See what ViralForge generates
+            {t("landing.examplesTitle")}
           </h2>
           <p className="mt-4 text-muted-foreground">
-            One idea. Seconds. A full content kit.
+            {t("landing.examplesSubtitle")}
           </p>
         </div>
 
@@ -254,15 +224,14 @@ export default function LandingPage() {
           <div className="flex flex-col gap-4">
             <div className="rounded-xl border border-border bg-card p-5">
               <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Your idea
+                {t("landing.yourIdea")}
               </p>
               <p className="rounded-lg border border-border/60 bg-background/60 p-4 text-sm italic leading-relaxed text-muted-foreground">
-                &ldquo;How I went from 0 to 10k followers in 90 days by staying
-                consistent and posting every single day&rdquo;
+                {t("landing.exampleIdea")}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-                  Tone: Motivational
+                  {t("landing.exampleTone")}
                 </span>
                 <span className="rounded-full border border-accent/30 bg-accent/5 px-2.5 py-1 text-xs text-accent">
                   Instagram
@@ -276,8 +245,8 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <ArrowRight className="h-4 w-4 text-primary" />
-              <span>Generated in seconds</span>
+              <ArrowRight className="h-4 w-4 text-primary rtl:rotate-180" />
+              <span>{t("landing.generatedInSeconds")}</span>
             </div>
           </div>
 
@@ -285,33 +254,26 @@ export default function LandingPage() {
           <div className="flex flex-col gap-4">
             <div className="rounded-xl border border-border bg-card p-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
-                Hook
+                {t("landing.exampleHookLabel")}
               </p>
-              <p className="text-sm leading-relaxed">
-                &ldquo;I had zero followers 90 days ago. Here&apos;s exactly
-                what I did to hit 10k — and why most people quit before they
-                see results.&rdquo;
-              </p>
+              <p className="text-sm leading-relaxed">{t("landing.exampleHook")}</p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-accent">
-                Instagram Caption
+                {t("landing.exampleIgLabel")}
               </p>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                90 days. 0 to 10k. No viral moment — just consistency. 🔥
-                Here&apos;s what nobody tells you about growing on
-                Instagram... [save this]
+                {t("landing.exampleIg")}
               </p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                X Thread Opener
+                {t("landing.exampleXLabel")}
               </p>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                I grew from 0 to 10k followers in 90 days. No paid ads. No
-                viral moment. Just this system: 🧵
+                {t("landing.exampleX")}
               </p>
             </div>
           </div>
@@ -322,23 +284,33 @@ export default function LandingPage() {
       <section className="border-y border-border/60 bg-card/30 py-16">
         <div className="container">
           <p className="mb-10 text-center text-lg font-semibold">
-            Join creators building content faster with AI
+            {t("landing.socialProofTitle")}
           </p>
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-10 sm:flex-row sm:justify-around">
             {(
               [
-                { icon: Users, stat: "500+", label: "Creators using ViralForge" },
-                { icon: Zap, stat: "10,000+", label: "Content pieces generated" },
-                { icon: Clock, stat: "2 hrs", label: "Saved per content pack" },
-              ] as const
-            ).map(({ icon: Icon, stat, label }) => (
+                { icon: Users, stat: "500+", labelKey: "landing.stat1Label" },
+                { icon: Zap, stat: "10,000+", labelKey: "landing.stat2Label" },
+                {
+                  icon: Clock,
+                  stat: t("landing.stat3Value"),
+                  labelKey: "landing.stat3Label",
+                },
+              ] as Array<{
+                icon: React.ComponentType<{ className?: string }>;
+                stat: string;
+                labelKey: MessageKey;
+              }>
+            ).map(({ icon: Icon, stat, labelKey }) => (
               <div
-                key={label}
+                key={labelKey}
                 className="flex flex-col items-center gap-1 text-center"
               >
                 <Icon className="mb-1 h-5 w-5 text-primary" />
                 <span className="text-3xl font-bold">{stat}</span>
-                <span className="text-sm text-muted-foreground">{label}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t(labelKey)}
+                </span>
               </div>
             ))}
           </div>
@@ -349,10 +321,10 @@ export default function LandingPage() {
       <section id="pricing" className="container py-20">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <h2 className="text-3xl font-bold sm:text-4xl">
-            Simple, transparent pricing
+            {t("landing.pricingTitle")}
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Start free. Upgrade when you&apos;re ready to scale your content.
+            {t("landing.pricingSubtitle")}
           </p>
         </div>
         <PricingTable authed={false} />
@@ -363,28 +335,27 @@ export default function LandingPage() {
         <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-accent/10 p-10 text-center md:p-16">
           <div className="absolute left-1/2 top-0 -z-10 h-64 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-[100px]" />
           <h2 className="text-balance text-3xl font-bold sm:text-4xl">
-            Your next 30 days of content starts here
+            {t("landing.ctaTitle")}
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Stop overthinking. Drop your idea and let ViralForge build your
-            content kit in seconds.
+            {t("landing.ctaSubtitle")}
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Button asChild size="lg" className="glow-primary">
               <Link href="/signup">
-                Start Free <ArrowRight className="h-4 w-4" />
+                {t("marketing.startFree")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
             </Button>
           </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-accent" /> 3 free generations
+              <Check className="h-4 w-4 text-accent" /> {t("landing.ctaCheck1")}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-accent" /> No credit card required
+              <Check className="h-4 w-4 text-accent" /> {t("landing.ctaCheck2")}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-accent" /> Cancel anytime
+              <Check className="h-4 w-4 text-accent" /> {t("landing.ctaCheck3")}
             </span>
           </div>
         </div>

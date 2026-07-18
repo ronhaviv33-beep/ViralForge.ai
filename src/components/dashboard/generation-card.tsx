@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Trash2, ArrowUpRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { dateLocale, toneLabel } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
 interface GenerationCardProps {
   id: string;
@@ -23,20 +25,21 @@ export function GenerationCard({
   createdAt,
 }: GenerationCardProps) {
   const router = useRouter();
+  const { locale, t } = useI18n();
   const [deleting, setDeleting] = React.useState(false);
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm("Delete this generation? This cannot be undone.")) return;
+    if (!confirm(t("generationCard.deleteConfirm"))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/generations/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      toast.success("Generation deleted");
+      toast.success(t("generationCard.deleted"));
       router.refresh();
     } catch {
-      toast.error("Could not delete. Please try again.");
+      toast.error(t("generationCard.deleteFailed"));
       setDeleting(false);
     }
   }
@@ -49,7 +52,7 @@ export function GenerationCard({
       <div className="min-w-0">
         <p className="truncate font-medium">{title}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary">{tone}</Badge>
+          <Badge variant="secondary">{toneLabel(t, tone)}</Badge>
           {platforms.slice(0, 3).map((p) => (
             <Badge key={p} variant="outline" className="text-muted-foreground">
               {p}
@@ -62,7 +65,7 @@ export function GenerationCard({
           )}
         </div>
         <p className="mt-1.5 text-xs text-muted-foreground">
-          {new Date(createdAt).toLocaleString(undefined, {
+          {new Date(createdAt).toLocaleString(dateLocale(locale), {
             dateStyle: "medium",
             timeStyle: "short",
           })}
@@ -73,7 +76,7 @@ export function GenerationCard({
           onClick={handleDelete}
           disabled={deleting}
           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-          aria-label="Delete generation"
+          aria-label={t("generationCard.deleteAria")}
         >
           {deleting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -81,7 +84,7 @@ export function GenerationCard({
             <Trash2 className="h-4 w-4" />
           )}
         </button>
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
       </div>
     </Link>
   );

@@ -56,6 +56,31 @@ function lookup(dict: Messages, key: string): string | undefined {
   return typeof node === "string" ? node : undefined;
 }
 
+/** BCP 47 locale string for date/number formatting. */
+export function dateLocale(locale: Locale): string {
+  return locale === "he" ? "he-IL" : "en-US";
+}
+
+/**
+ * Stored tone values are English (they live in the database and prompts).
+ * This maps a stored tone to its translated display label; unknown values
+ * fall back to the raw string.
+ */
+const TONE_KEYS: Record<string, MessageKey> = {
+  Professional: "tones.professional",
+  Educational: "tones.educational",
+  Funny: "tones.funny",
+  Founder: "tones.founder",
+  Storytelling: "tones.storytelling",
+  Sales: "tones.sales",
+  Casual: "tones.casual",
+};
+
+export function toneLabel(t: Translator, tone: string): string {
+  const key = TONE_KEYS[tone];
+  return key ? t(key) : tone;
+}
+
 /**
  * Build a translate function for a locale. Missing keys fall back to English,
  * then to the key itself, so a partial dictionary can never crash the UI.

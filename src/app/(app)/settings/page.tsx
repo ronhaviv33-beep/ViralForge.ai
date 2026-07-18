@@ -9,6 +9,8 @@ import { PLANS, type PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BillingButton } from "@/components/dashboard/billing-button";
+import { dateLocale, type Translator } from "@/lib/i18n";
+import { getLocale, getT } from "@/lib/i18n-server";
 
 export const metadata: Metadata = {
   title: "Settings — ViralForge",
@@ -16,27 +18,28 @@ export const metadata: Metadata = {
 
 /** Human-readable subscription status + display color. */
 function statusInfo(
+  t: Translator,
   status: string | undefined,
   cancelAtPeriodEnd: boolean
 ): { label: string; className: string } | null {
   if (!status) return null;
   if ((status === "active" || status === "trialing") && cancelAtPeriodEnd) {
     return {
-      label: "Cancels at period end",
+      label: t("settingsPage.statusCancelsAtPeriodEnd"),
       className: "bg-amber-500/10 text-amber-500",
     };
   }
   switch (status) {
     case "active":
-      return { label: "Active", className: "bg-accent/10 text-accent" };
+      return { label: t("settingsPage.statusActive"), className: "bg-accent/10 text-accent" };
     case "trialing":
-      return { label: "Trial", className: "bg-primary/10 text-primary" };
+      return { label: t("settingsPage.statusTrial"), className: "bg-primary/10 text-primary" };
     case "past_due":
-      return { label: "Past due", className: "bg-destructive/10 text-destructive" };
+      return { label: t("settingsPage.statusPastDue"), className: "bg-destructive/10 text-destructive" };
     case "unpaid":
-      return { label: "Unpaid", className: "bg-destructive/10 text-destructive" };
+      return { label: t("settingsPage.statusUnpaid"), className: "bg-destructive/10 text-destructive" };
     case "canceled":
-      return { label: "Canceled", className: "bg-secondary text-muted-foreground" };
+      return { label: t("settingsPage.statusCanceled"), className: "bg-secondary text-muted-foreground" };
     default:
       return { label: status, className: "bg-secondary text-muted-foreground" };
   }
@@ -45,6 +48,8 @@ function statusInfo(
 export default async function SettingsPage() {
   const user = await requireUser();
   const plan = user.plan as PlanId;
+  const locale = await getLocale();
+  const t = await getT();
   const [usage, agentUsage] = await Promise.all([
     getUsageStatus(user.id, user.plan),
     getAgentUsageStatus(user.id, user.plan),
@@ -58,34 +63,34 @@ export default async function SettingsPage() {
   const stripeReady = isStripeConfigured();
   const status =
     plan !== "free" || subscription
-      ? statusInfo(subscription?.status, subscription?.cancelAtPeriodEnd ?? false)
+      ? statusInfo(t, subscription?.status, subscription?.cancelAtPeriodEnd ?? false)
       : null;
 
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage your account and subscription.
-        </p>
+        <h1 className="text-2xl font-bold">{t("settingsPage.title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("settingsPage.subtitle")}</p>
       </div>
 
       {/* Account */}
       <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="font-semibold">Account</h2>
+        <h2 className="font-semibold">{t("settingsPage.account")}</h2>
         <dl className="mt-4 divide-y divide-border text-sm">
           <div className="flex items-center justify-between py-3">
-            <dt className="text-muted-foreground">Name</dt>
+            <dt className="text-muted-foreground">{t("settingsPage.name")}</dt>
             <dd className="font-medium">{user.name || "—"}</dd>
           </div>
           <div className="flex items-center justify-between py-3">
-            <dt className="text-muted-foreground">Email</dt>
+            <dt className="text-muted-foreground">{t("settingsPage.email")}</dt>
             <dd className="font-medium">{user.email}</dd>
           </div>
           <div className="flex items-center justify-between py-3">
-            <dt className="text-muted-foreground">Member since</dt>
+            <dt className="text-muted-foreground">
+              {t("settingsPage.memberSince")}
+            </dt>
             <dd className="font-medium">
-              {user.createdAt.toLocaleDateString(undefined, {
+              {user.createdAt.toLocaleDateString(dateLocale(locale), {
                 dateStyle: "medium",
               })}
             </dd>
@@ -96,7 +101,7 @@ export default async function SettingsPage() {
       {/* Subscription */}
       <section className="rounded-xl border border-border bg-card p-6">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Subscription</h2>
+          <h2 className="font-semibold">{t("settingsPage.subscription")}</h2>
           <Badge variant={plan === "free" ? "secondary" : "default"}>
             {PLANS[plan].name}
           </Badge>
@@ -104,14 +109,19 @@ export default async function SettingsPage() {
 
         <div className="mt-4 space-y-3 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Plan</span>
+            <span className="text-muted-foreground">{t("settingsPage.plan")}</span>
             <span className="font-medium">
-              {PLANS[plan].name} · ${PLANS[plan].price}/mo
+              {t("settingsPage.planPriceLine", {
+                plan: PLANS[plan].name,
+                price: PLANS[plan].price,
+              })}
             </span>
           </div>
           {status && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Status</span>
+              <span className="text-muted-foreground">
+                {t("settingsPage.status")}
+              </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}
               >
@@ -120,16 +130,20 @@ export default async function SettingsPage() {
             </div>
           )}
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Usage this month</span>
+            <span className="text-muted-foreground">
+              {t("settingsPage.usageThisMonth")}
+            </span>
             <span className="font-medium">
               {usage.unlimited
-                ? `${usage.used} (unlimited)`
+                ? t("settingsPage.usageUnlimited", { used: usage.used })
                 : `${usage.used} / ${usage.limit}`}
             </span>
           </div>
           {agentUsage.enabled && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Creator Agent this month</span>
+              <span className="text-muted-foreground">
+                {t("settingsPage.agentThisMonth")}
+              </span>
               <span className="font-medium">
                 {agentUsage.used} / {agentUsage.limit}
               </span>
@@ -138,20 +152,21 @@ export default async function SettingsPage() {
           {subscription?.currentPeriodEnd && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">
-                {subscription.cancelAtPeriodEnd ? "Access until" : "Renews"}
+                {subscription.cancelAtPeriodEnd
+                  ? t("settingsPage.accessUntil")
+                  : t("settingsPage.renews")}
               </span>
               <span className="font-medium">
-                {subscription.currentPeriodEnd.toLocaleDateString(undefined, {
-                  dateStyle: "medium",
-                })}
+                {subscription.currentPeriodEnd.toLocaleDateString(
+                  dateLocale(locale),
+                  { dateStyle: "medium" }
+                )}
               </span>
             </div>
           )}
           {subscription?.cancelAtPeriodEnd && (
             <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-500">
-              Your subscription is set to cancel. You keep full access until the
-              date above, then you&apos;ll move to the Free plan. You can resume it
-              anytime from the billing portal.
+              {t("settingsPage.cancelNotice")}
             </p>
           )}
         </div>
@@ -159,25 +174,24 @@ export default async function SettingsPage() {
         <div className="mt-6 flex flex-wrap gap-3">
           {plan === "free" ? (
             <Button asChild>
-              <Link href="/pricing">Upgrade plan</Link>
+              <Link href="/pricing">{t("settingsPage.upgradePlan")}</Link>
             </Button>
           ) : stripeReady && user.stripeCustomerId ? (
             <BillingButton
               action="portal"
-              label="Manage billing"
+              label={t("settingsPage.manageBilling")}
               variant="outline"
             />
           ) : (
             <Button asChild variant="outline">
-              <Link href="/pricing">View plans</Link>
+              <Link href="/pricing">{t("settingsPage.viewPlans")}</Link>
             </Button>
           )}
         </div>
 
         {!stripeReady && (
           <p className="mt-4 text-xs text-muted-foreground">
-            Billing is not configured in this environment. Set your Stripe
-            environment variables to enable subscriptions.
+            {t("settingsPage.billingNotConfigured")}
           </p>
         )}
       </section>

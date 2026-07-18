@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { ContentPackSchema, type ContentPack } from "@/lib/content-types";
 import type { RegeneratableSection } from "@/lib/validation";
+import type { Locale } from "@/lib/i18n";
 
 let client: OpenAI | null = null;
 
@@ -114,10 +115,33 @@ function buildResponseSchema(platforms: string[]) {
   };
 }
 
-function buildSystemPrompt(): string {
+/**
+ * Explicit output-language instruction driven by the active site locale.
+ * The locale — not the language of the input text or brand context — decides
+ * the language of every generated string.
+ */
+function languageInstruction(locale: Locale): string[] {
+  if (locale === "he") {
+    return [
+      "OUTPUT LANGUAGE: Hebrew.",
+      "- Write ALL textual output (hooks, captions, posts, threads, CTAs, ideas, carousel slides, outlines, drafts) in natural, native-quality Hebrew.",
+      "- This applies even if the source material, tone name, or brand voice context is written in another language.",
+      "- Brand names, product names, and platform names may stay in their original language.",
+      "- Hashtags: prefer Hebrew hashtags, mixing in widely-used English hashtags where that is what the platform's audience actually uses.",
+    ];
+  }
+  return [
+    "OUTPUT LANGUAGE: English.",
+    "- Write ALL textual output in English, even if the source material or brand voice context is written in another language.",
+  ];
+}
+
+function buildSystemPrompt(locale: Locale): string {
   return [
     "You are ViralForge, an elite social media strategist and copywriter.",
     "You turn a single idea, transcript, or block of text into a complete, ready-to-publish content package.",
+    "",
+    ...languageInstruction(locale),
     "",
     "Rules:",
     "- Keep everything practical and immediately usable. No filler, no fluff, no generic platitudes.",
@@ -173,12 +197,16 @@ function buildUserPrompt(
   return lines.join("\n");
 }
 
-/** Generate a structured content pack from the given input. */
+/**
+ * Generate a structured content pack from the given input.
+ * `locale` is the active site locale and decides the output language.
+ */
 export async function generateContentPack(
   text: string,
   tone: string,
   platforms: string[],
-  brandContext?: string | null
+  brandContext?: string | null,
+  locale: Locale = "en"
 ): Promise<{ pack: ContentPack; meta: AiCallMeta }> {
   const openai = getClient();
   const schema = buildResponseSchema(platforms);
@@ -187,7 +215,7 @@ export async function generateContentPack(
     model: MODEL,
     temperature: 0.8,
     messages: [
-      { role: "system", content: buildSystemPrompt() },
+      { role: "system", content: buildSystemPrompt(locale) },
       { role: "user", content: buildUserPrompt(text, tone, platforms, brandContext) },
     ],
     response_format: {
@@ -278,10 +306,13 @@ const SECTION_TASK: Record<RegeneratableSection, string> = {
   carousel: "Generate exactly 5 carousel slides. Each needs a slide number, a punchy title, and body text.",
 };
 
-function buildRegenSystemPrompt(): string {
+function buildRegenSystemPrompt(locale: Locale): string {
   return [
     "You are ViralForge, an elite social media strategist and copywriter.",
     "You are regenerating one section of an existing content pack.",
+    "",
+    ...languageInstruction(locale),
+    "",
     "Rules:",
     "- Match the requested TONE exactly in voice, vocabulary, and energy.",
     "- Be specific, concrete, and grounded in the source material provided.",
@@ -345,7 +376,8 @@ export async function regenerateSection(
     platforms: string[];
     outputJson: ContentPack;
   },
-  brandContext?: string | null
+  brandContext?: string | null,
+  locale: Locale = "en"
 ): Promise<{ value: unknown; meta: AiCallMeta }> {
   const openai = getClient();
 
@@ -363,7 +395,7 @@ export async function regenerateSection(
     model: MODEL,
     temperature: 0.85,
     messages: [
-      { role: "system", content: buildRegenSystemPrompt() },
+      { role: "system", content: buildRegenSystemPrompt(locale) },
       { role: "user", content: buildRegenUserPrompt(section, context, brandContext) },
     ],
     response_format: {

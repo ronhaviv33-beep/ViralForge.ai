@@ -4,90 +4,113 @@ import { requireUser } from "@/lib/auth";
 import { getBrandProfile, type BrandProfile } from "@/lib/brand-profile";
 import { getAgentUsageStatus } from "@/lib/agent-limits";
 import { BrandProfileForm } from "@/components/dashboard/brand-profile-form";
+import type { Translator } from "@/lib/i18n";
+import { getT } from "@/lib/i18n-server";
 
 export const metadata = { title: "Creator Agent – ViralForge" };
 
 /** Human-readable facts the agent currently knows. Product language only. */
-function agentKnowledge(profile: BrandProfile | null): string[] {
+function agentKnowledge(t: Translator, profile: BrandProfile | null): string[] {
   if (!profile) return [];
   const facts: string[] = [];
-  if (profile.brandName) facts.push(`You go by ${profile.brandName}`);
-  if (profile.niche) facts.push(`Your niche is ${profile.niche}`);
-  if (profile.audience) facts.push(`You create for ${profile.audience}`);
-  if (profile.goals) facts.push(`You want to be known for: ${profile.goals}`);
+  if (profile.brandName)
+    facts.push(t("creatorAgent.factName", { value: profile.brandName }));
+  if (profile.niche)
+    facts.push(t("creatorAgent.factNiche", { value: profile.niche }));
+  if (profile.audience)
+    facts.push(t("creatorAgent.factAudience", { value: profile.audience }));
+  if (profile.goals)
+    facts.push(t("creatorAgent.factGoals", { value: profile.goals }));
   if (profile.sentenceLength)
-    facts.push(`You like ${profile.sentenceLength.toLowerCase()} sentences`);
+    facts.push(
+      t("creatorAgent.factSentences", {
+        value: profile.sentenceLength.toLowerCase(),
+      })
+    );
   if (profile.emojiUsage)
-    facts.push(`Emoji style: ${profile.emojiUsage.toLowerCase()}`);
-  if (profile.ctaStyle) facts.push(`You end posts with “${profile.ctaStyle}”`);
-  if (profile.postingStyle) facts.push(`Posting style: ${profile.postingStyle}`);
+    facts.push(
+      t("creatorAgent.factEmoji", { value: profile.emojiUsage.toLowerCase() })
+    );
+  if (profile.ctaStyle)
+    facts.push(t("creatorAgent.factCta", { value: profile.ctaStyle }));
+  if (profile.postingStyle)
+    facts.push(t("creatorAgent.factPosting", { value: profile.postingStyle }));
   if (profile.contentPillars.length)
-    facts.push(`Your main topics: ${profile.contentPillars.join(", ")}`);
+    facts.push(
+      t("creatorAgent.factTopics", { value: profile.contentPillars.join(", ") })
+    );
   if (profile.preferredPhrases.length)
-    facts.push(`Phrases you love: ${profile.preferredPhrases.join(", ")}`);
+    facts.push(
+      t("creatorAgent.factPhrases", {
+        value: profile.preferredPhrases.join(", "),
+      })
+    );
   if (profile.bannedPhrases.length)
-    facts.push(`Phrases it will avoid: ${profile.bannedPhrases.join(", ")}`);
+    facts.push(
+      t("creatorAgent.factBanned", { value: profile.bannedPhrases.join(", ") })
+    );
   if (profile.primaryPlatforms.length)
-    facts.push(`You post mostly on ${profile.primaryPlatforms.join(", ")}`);
-  if (profile.examplePosts)
-    facts.push("It has example posts of yours to study your voice");
-  if (profile.notes) facts.push("It follows your extra instructions");
+    facts.push(
+      t("creatorAgent.factPlatforms", {
+        value: profile.primaryPlatforms.join(", "),
+      })
+    );
+  if (profile.examplePosts) facts.push(t("creatorAgent.factExamples"));
+  if (profile.notes) facts.push(t("creatorAgent.factNotes"));
   return facts;
 }
 
 export default async function CreatorAgentPage() {
   const user = await requireUser();
+  const t = await getT();
   const [profile, agentStatus] = await Promise.all([
     getBrandProfile(user.id),
     getAgentUsageStatus(user.id, user.plan),
   ]);
-  const knowledge = agentKnowledge(profile);
+  const knowledge = agentKnowledge(t, profile);
 
   return (
     <div className="max-w-3xl space-y-8">
       <div>
         <div className="flex items-center gap-2">
           <Bot className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Creator Agent</h1>
+          <h1 className="text-2xl font-bold">{t("nav.creatorAgent")}</h1>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Teach ViralForge your style.
+          {t("creatorAgent.tagline")}
         </p>
       </div>
 
       <div className="rounded-xl border border-border bg-card/50 p-4 text-sm text-muted-foreground">
         <p>
-          Tell us who you create for, what you talk about, and how your content
-          should sound. ViralForge will use that to generate ideas, hooks,
-          captions, and scripts that feel more like{" "}
-          <span className="text-foreground">your voice</span>.
+          {t("creatorAgent.intro1")}{" "}
+          <span className="text-foreground">{t("creatorAgent.introHighlight")}</span>.
         </p>
-        <p className="mt-2 text-xs">
-          The more you teach your Creator Agent, the more personalized your
-          content becomes. Every field is optional — skip anything and come back
-          later.
-        </p>
+        <p className="mt-2 text-xs">{t("creatorAgent.intro2")}</p>
       </div>
 
       {/* Monthly usage */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/50 px-4 py-3 text-sm">
         <span className="text-muted-foreground">
-          Creator Agent this month:{" "}
+          {t("creatorAgent.usagePrefix")}{" "}
           <span className="font-medium text-foreground">
-            {agentStatus.used} of {agentStatus.limit}
+            {t("creatorAgent.usageUsedOf", {
+              used: agentStatus.used,
+              limit: agentStatus.limit,
+            })}
           </span>{" "}
-          personalized generations used
+          {t("creatorAgent.usageSuffix")}
         </span>
         {agentStatus.blocked ? (
           <Link
             href="/pricing"
             className="text-xs font-medium text-primary hover:underline"
           >
-            Upgrade to keep your style →
+            {t("creatorAgent.upgradeKeepStyle")}
           </Link>
         ) : (
           <span className="text-xs text-muted-foreground">
-            {agentStatus.remaining} remaining
+            {t("creatorAgent.remaining", { count: agentStatus.remaining })}
           </span>
         )}
       </div>
@@ -95,8 +118,8 @@ export default async function CreatorAgentPage() {
       {agentStatus.blocked && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-muted-foreground">
           {agentStatus.blockedReason === "limit"
-            ? "You've reached your Creator Agent limit for this month. Your content will still generate — just without your saved style. Upgrade to keep generating with it."
-            : "Creator Agent isn't available on your current plan. Upgrade to generate content with your saved style."}
+            ? t("creatorAgent.blockedLimit")
+            : t("creatorAgent.blockedPlan")}
         </div>
       )}
 
@@ -105,9 +128,7 @@ export default async function CreatorAgentPage() {
         <div className="rounded-xl border border-primary/25 bg-primary/5 p-5">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold">
-              What your Creator Agent knows about you
-            </h2>
+            <h2 className="text-sm font-semibold">{t("creatorAgent.knowsTitle")}</h2>
           </div>
           <ul className="mt-3 space-y-1.5">
             {knowledge.map((fact) => (
@@ -121,7 +142,7 @@ export default async function CreatorAgentPage() {
             ))}
           </ul>
           <p className="mt-3 text-xs text-muted-foreground/80">
-            This is used automatically every time you generate content.
+            {t("creatorAgent.knowsFooter")}
           </p>
         </div>
       )}

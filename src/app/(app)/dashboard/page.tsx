@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { GenerationCard } from "@/components/dashboard/generation-card";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { CheckoutToast } from "@/components/dashboard/checkout-toast";
+import { toneLabel } from "@/lib/i18n";
 import { getT } from "@/lib/i18n-server";
 
 export default async function DashboardPage() {
@@ -62,14 +63,14 @@ export default async function DashboardPage() {
     },
     {
       label: t("dashboard.stats.hoursSaved"),
-      value: `${analytics.estimatedHoursSaved}h`,
+      value: t("dashboard.stats.hoursValue", { h: analytics.estimatedHoursSaved }),
       hint: t("dashboard.stats.hoursSavedHint"),
       icon: Clock,
       accent: "accent" as const,
     },
     {
       label: t("dashboard.stats.mostUsedTone"),
-      value: analytics.mostUsedTone ?? "—",
+      value: analytics.mostUsedTone ? toneLabel(t, analytics.mostUsedTone) : "—",
       hint: analytics.mostUsedTone
         ? t("dashboard.stats.goToVoice")
         : t("dashboard.stats.noData"),

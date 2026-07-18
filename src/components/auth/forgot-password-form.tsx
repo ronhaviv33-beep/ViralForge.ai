@@ -6,8 +6,10 @@ import { Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/components/i18n-provider";
 
 export function ForgotPasswordForm() {
+  const { t } = useI18n();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [sent, setSent] = React.useState(false);
@@ -28,12 +30,12 @@ export function ForgotPasswordForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Something went wrong.");
+        setError(data.error || t("errors.somethingWentWrong"));
         return;
       }
       setSent(true);
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("errors.networkError"));
     } finally {
       setLoading(false);
     }
@@ -45,12 +47,9 @@ export function ForgotPasswordForm() {
         <div className="flex justify-center">
           <CheckCircle className="h-12 w-12 text-green-500" />
         </div>
-        <p className="text-sm text-muted-foreground">
-          If that email is registered, you&apos;ll receive a reset link shortly.
-          Check your inbox (and spam folder).
-        </p>
+        <p className="text-sm text-muted-foreground">{t("auth.resetSent")}</p>
         <Link href="/login" className="block text-sm text-primary hover:underline">
-          Back to log in
+          {t("auth.backToLogin")}
         </Link>
       </div>
     );
@@ -59,13 +58,13 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.email")}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           required
-          placeholder="you@example.com"
+          placeholder={t("auth.emailPlaceholder")}
           autoComplete="email"
         />
       </div>
@@ -78,12 +77,12 @@ export function ForgotPasswordForm() {
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Send reset link
+        {t("auth.sendResetLink")}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/login" className="text-primary hover:underline">
-          Back to log in
+          {t("auth.backToLogin")}
         </Link>
       </p>
     </form>

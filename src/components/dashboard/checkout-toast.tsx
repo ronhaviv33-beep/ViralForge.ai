@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useI18n } from "@/components/i18n-provider";
 
 /**
  * Shows one-time feedback after returning from Stripe Checkout
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 export function CheckoutToast() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const fired = React.useRef(false);
 
   React.useEffect(() => {
@@ -21,12 +23,11 @@ export function CheckoutToast() {
     fired.current = true;
 
     if (checkout === "success") {
-      toast.success("You're subscribed! 🎉", {
-        description:
-          "Your plan is being activated — it may take a few seconds to appear.",
+      toast.success(t("checkout.successTitle"), {
+        description: t("checkout.successBody"),
       });
     } else if (checkout === "cancelled") {
-      toast.info("Checkout cancelled. No charge was made.");
+      toast.info(t("checkout.cancelled"));
     }
 
     // Remove the param so refreshing doesn't re-trigger the toast.
@@ -36,7 +37,7 @@ export function CheckoutToast() {
     router.replace(query ? `?${query}` : window.location.pathname, {
       scroll: false,
     });
-  }, [searchParams, router]);
+  }, [searchParams, router, t]);
 
   return null;
 }

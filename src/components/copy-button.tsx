@@ -5,6 +5,7 @@ import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n-provider";
 
 interface CopyButtonProps extends Omit<ButtonProps, "onClick"> {
   value: string;
@@ -19,16 +20,17 @@ export function CopyButton({
   size = "sm",
   ...props
 }: CopyButtonProps) {
+  const { t } = useI18n();
   const [copied, setCopied] = React.useState(false);
 
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      toast.success("Copied to clipboard");
+      toast.success(t("copy.copied"));
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      toast.error("Could not copy. Please copy manually.");
+      toast.error(t("copy.copyFailed"));
     }
   }
 
@@ -46,7 +48,7 @@ export function CopyButton({
       ) : (
         <Copy />
       )}
-      {label ? <span>{copied ? "Copied" : label}</span> : null}
+      {label ? <span>{copied ? t("copy.copiedLabel") : label}</span> : null}
     </Button>
   );
 }

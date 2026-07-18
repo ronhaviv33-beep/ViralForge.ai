@@ -8,6 +8,7 @@ import { ContentPackSchema } from "@/lib/content-types";
 import { rateLimit } from "@/lib/rate-limit";
 import { startAgentRun, completeAgentRun, failAgentRun } from "@/lib/agent-runs";
 import { getAgentUsageStatus } from "@/lib/agent-limits";
+import { getLocale, getT } from "@/lib/i18n-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -16,6 +17,11 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Active site locale (vf_locale cookie): the regenerated section is written
+  // in this language, keeping regeneration consistent with the visible UI.
+  const locale = await getLocale();
+  const t = await getT();
+
   let user;
   try {
     user = await requireUser();
@@ -26,7 +32,7 @@ export async function POST(
   const rl = rateLimit(`regen-section:${user.id}`, 10, 60_000);
   if (!rl.success) {
     return NextResponse.json(
-      { error: "You're regenerating too fast. Please wait a moment." },
+      { error: t("apiErrors.regenTooFast") },
       { status: 429 }
     );
   }
@@ -108,13 +114,14 @@ export async function POST(
         platforms: generation.platforms,
         outputJson: pack,
       },
-      brandContext
+      brandContext,
+      locale
     ));
   } catch (err) {
     console.error("[regen-section] AI error", err);
     await failAgentRun(runId, err instanceof Error ? err.message : "AI call failed");
     return NextResponse.json(
-      { error: "We couldn't regenerate this section. Please try again." },
+      { error: t("apiErrors.regenFailed") },
       { status: 502 }
     );
   }
@@ -125,7 +132,7 @@ export async function POST(
     console.error("[regen-section] merged pack invalid", mergedResult.error);
     await failAgentRun(runId, "AI output failed pack validation", meta);
     return NextResponse.json(
-      { error: "The AI returned an unexpected format. Please try again." },
+      { error: t("apiErrors.regenBadFormat") },
       { status: 502 }
     );
   }
@@ -140,7 +147,7 @@ export async function POST(
     // The AI work itself succeeded (and cost was incurred) — record it.
     await completeAgentRun(runId, meta);
     return NextResponse.json(
-      { error: "Regenerated but failed to save. Please try again." },
+      { error: t("apiErrors.regenSaveFailed") },
       { status: 500 }
     );
   }

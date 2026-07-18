@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n-provider";
 
 type Action = "portal" | "upgrade";
 
@@ -21,6 +22,7 @@ export function BillingButton({
   ...props
 }: BillingButtonProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const [loading, setLoading] = React.useState(false);
 
   async function handleClick() {
@@ -38,10 +40,12 @@ export function BillingButton({
         body: action === "upgrade" ? JSON.stringify({ plan }) : undefined,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+      if (!res.ok) throw new Error(data.error || t("errors.somethingWentWrong"));
       window.location.href = data.url;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      toast.error(
+        err instanceof Error ? err.message : t("errors.somethingWentWrong")
+      );
       setLoading(false);
     }
   }

@@ -18,6 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { toneLabel, type MessageKey } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
 const SENTENCE_LENGTHS = ["Short", "Medium", "Long", "Mixed"] as const;
 const EMOJI_USAGES = ["None", "Minimal", "Moderate", "Heavy"] as const;
@@ -25,17 +27,17 @@ const NONE = "__none__";
 
 // Friendly display text for dropdown options. Saved values stay unchanged so
 // existing profiles keep working.
-const SENTENCE_LENGTH_LABELS: Record<(typeof SENTENCE_LENGTHS)[number], string> = {
-  Short: "Short & punchy",
-  Medium: "Medium — a bit of both",
-  Long: "Long — storytelling style",
-  Mixed: "Mixed — varies by post",
+const SENTENCE_LENGTH_KEYS: Record<(typeof SENTENCE_LENGTHS)[number], MessageKey> = {
+  Short: "profileForm.sentenceShort",
+  Medium: "profileForm.sentenceMedium",
+  Long: "profileForm.sentenceLong",
+  Mixed: "profileForm.sentenceMixed",
 };
-const EMOJI_USAGE_LABELS: Record<(typeof EMOJI_USAGES)[number], string> = {
-  None: "No emojis",
-  Minimal: "A few here and there",
-  Moderate: "A moderate amount",
-  Heavy: "Lots of emojis 🎉",
+const EMOJI_USAGE_KEYS: Record<(typeof EMOJI_USAGES)[number], MessageKey> = {
+  None: "profileForm.emojiNone",
+  Minimal: "profileForm.emojiMinimal",
+  Moderate: "profileForm.emojiModerate",
+  Heavy: "profileForm.emojiHeavy",
 };
 
 interface Props {
@@ -44,6 +46,7 @@ interface Props {
 
 export function BrandProfileForm({ initialProfile }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const [saving, setSaving] = React.useState(false);
 
   const [brandName, setBrandName] = React.useState(initialProfile?.brandName ?? "");
@@ -86,9 +89,7 @@ export function BrandProfileForm({ initialProfile }: Props) {
   }
 
   function handleResetAll() {
-    const confirmed = window.confirm(
-      "Clear all Creator Agent fields? This empties the form — nothing is deleted until you click Save."
-    );
+    const confirmed = window.confirm(t("profileForm.resetConfirm"));
     if (!confirmed) return;
     setBrandName("");
     setNiche("");
@@ -106,7 +107,7 @@ export function BrandProfileForm({ initialProfile }: Props) {
     setBannedPhrases("");
     setExamplePosts("");
     setNotes("");
-    toast.info("All fields cleared. Click “Save Creator Agent” to make it permanent.");
+    toast.info(t("profileForm.clearedToast"));
   }
 
   function splitCsv(val: string): string[] {
@@ -144,13 +145,13 @@ export function BrandProfileForm({ initialProfile }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to save your Creator Agent.");
+        toast.error(data.error || t("profileForm.saveFailed"));
         return;
       }
-      toast.success("Your Creator Agent has been updated.");
+      toast.success(t("profileForm.saved"));
       router.refresh();
     } catch {
-      toast.error("Network error. Please try again.");
+      toast.error(t("errors.networkError"));
     } finally {
       setSaving(false);
     }
@@ -161,64 +162,63 @@ export function BrandProfileForm({ initialProfile }: Props) {
       {/* Identity */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold">Who are you?</h2>
+          <h2 className="text-base font-semibold">{t("profileForm.identityTitle")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            The basics — who&apos;s talking, and who&apos;s listening.
+            {t("profileForm.identitySubtitle")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="brandName">Your name or brand name</Label>
+          <Label htmlFor="brandName">{t("profileForm.brandNameLabel")}</Label>
           <Input
             id="brandName"
             value={brandName}
             onChange={(e) => setBrandName(e.target.value.slice(0, 100))}
-            placeholder="e.g. ViralForge, Jane Smith"
+            placeholder={t("profileForm.brandNamePlaceholder")}
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            The name you go by online.
+            {t("profileForm.brandNameHint")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="niche">What&apos;s your niche?</Label>
+          <Label htmlFor="niche">{t("profileForm.nicheLabel")}</Label>
           <Input
             id="niche"
             value={niche}
             onChange={(e) => setNiche(e.target.value.slice(0, 150))}
-            placeholder="e.g. Fitness for busy parents, No-code app building"
+            placeholder={t("profileForm.nichePlaceholder")}
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            The corner of the internet you want to own.
+            {t("profileForm.nicheHint")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="audience">Who is your content for?</Label>
+          <Label htmlFor="audience">{t("profileForm.audienceLabel")}</Label>
           <Textarea
             id="audience"
             value={audience}
             onChange={(e) => setAudience(e.target.value.slice(0, 400))}
-            placeholder="e.g. New freelancers who want to get more clients from Instagram"
+            placeholder={t("profileForm.audiencePlaceholder")}
             className="min-h-[72px]"
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            Describe your followers like you&apos;d describe them to a friend. Who are
-            they and what do they want?
+            {t("profileForm.audienceHint")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="goals">What do you want to be known for?</Label>
+          <Label htmlFor="goals">{t("profileForm.goalsLabel")}</Label>
           <Textarea
             id="goals"
             value={goals}
             onChange={(e) => setGoals(e.target.value.slice(0, 400))}
-            placeholder="e.g. The person who makes personal finance actually simple"
+            placeholder={t("profileForm.goalsPlaceholder")}
             className="min-h-[72px]"
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            Your agent keeps your content pointed at this goal.
+            {t("profileForm.goalsHint")}
           </p>
         </div>
       </div>
@@ -226,67 +226,67 @@ export function BrandProfileForm({ initialProfile }: Props) {
       {/* Voice */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold">How do you sound?</h2>
+          <h2 className="text-base font-semibold">{t("profileForm.voiceTitle")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Your writing style — the AI will copy it.
+            {t("profileForm.voiceSubtitle")}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label>Your usual vibe</Label>
+            <Label>{t("profileForm.vibeLabel")}</Label>
             <Select
               value={defaultTone || NONE}
               onValueChange={(v) => setDefaultTone(v === NONE ? "" : v)}
               disabled={saving}
             >
               <SelectTrigger>
-                <SelectValue placeholder="No preference" />
+                <SelectValue placeholder={t("profileForm.noPreference")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>No preference</SelectItem>
-                {TONES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
+                <SelectItem value={NONE}>{t("profileForm.noPreference")}</SelectItem>
+                {TONES.map((toneOption) => (
+                  <SelectItem key={toneOption} value={toneOption}>
+                    {toneLabel(t, toneOption)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Sentence style</Label>
+            <Label>{t("profileForm.sentenceStyleLabel")}</Label>
             <Select
               value={sentenceLength || NONE}
               onValueChange={(v) => setSentenceLength(v === NONE ? "" : v)}
               disabled={saving}
             >
               <SelectTrigger>
-                <SelectValue placeholder="No preference" />
+                <SelectValue placeholder={t("profileForm.noPreference")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>No preference</SelectItem>
+                <SelectItem value={NONE}>{t("profileForm.noPreference")}</SelectItem>
                 {SENTENCE_LENGTHS.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {SENTENCE_LENGTH_LABELS[s]}
+                    {t(SENTENCE_LENGTH_KEYS[s])}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Emojis</Label>
+            <Label>{t("profileForm.emojisLabel")}</Label>
             <Select
               value={emojiUsage || NONE}
               onValueChange={(v) => setEmojiUsage(v === NONE ? "" : v)}
               disabled={saving}
             >
               <SelectTrigger>
-                <SelectValue placeholder="No preference" />
+                <SelectValue placeholder={t("profileForm.noPreference")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>No preference</SelectItem>
+                <SelectItem value={NONE}>{t("profileForm.noPreference")}</SelectItem>
                 {EMOJI_USAGES.map((e) => (
                   <SelectItem key={e} value={e}>
-                    {EMOJI_USAGE_LABELS[e]}
+                    {t(EMOJI_USAGE_KEYS[e])}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -294,27 +294,25 @@ export function BrandProfileForm({ initialProfile }: Props) {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ctaStyle">How do you end your posts?</Label>
+          <Label htmlFor="ctaStyle">{t("profileForm.ctaLabel")}</Label>
           <Input
             id="ctaStyle"
             value={ctaStyle}
             onChange={(e) => setCtaStyle(e.target.value.slice(0, 150))}
-            placeholder="e.g. 'Follow for more', 'Link in bio', 'Drop a comment below'"
+            placeholder={t("profileForm.ctaPlaceholder")}
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            The line you usually use to ask people to follow, comment, or click.
+            {t("profileForm.ctaHint")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="postingStyle">
-            How would you describe your posting style?
-          </Label>
+          <Label htmlFor="postingStyle">{t("profileForm.postingStyleLabel")}</Label>
           <Input
             id="postingStyle"
             value={postingStyle}
             onChange={(e) => setPostingStyle(e.target.value.slice(0, 200))}
-            placeholder="e.g. Short daily tips with one personal story per week"
+            placeholder={t("profileForm.postingStylePlaceholder")}
             disabled={saving}
           />
         </div>
@@ -323,36 +321,35 @@ export function BrandProfileForm({ initialProfile }: Props) {
       {/* Signature phrases */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold">Your signature phrases</h2>
+          <h2 className="text-base font-semibold">{t("profileForm.phrasesTitle")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Words to lean into — and words that should never appear.
+            {t("profileForm.phrasesSubtitle")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="preferredPhrases">Phrases that sound like you</Label>
+          <Label htmlFor="preferredPhrases">{t("profileForm.preferredLabel")}</Label>
           <Input
             id="preferredPhrases"
             value={preferredPhrases}
             onChange={(e) => setPreferredPhrases(e.target.value)}
-            placeholder="e.g. let's be real, small steps big wins"
+            placeholder={t("profileForm.preferredPlaceholder")}
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            Your agent will work these in naturally. Separate with commas.
+            {t("profileForm.preferredHint")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bannedPhrases">Phrases to never use</Label>
+          <Label htmlFor="bannedPhrases">{t("profileForm.bannedLabel")}</Label>
           <Input
             id="bannedPhrases"
             value={bannedPhrases}
             onChange={(e) => setBannedPhrases(e.target.value)}
-            placeholder="e.g. game changer, crushing it, hustle"
+            placeholder={t("profileForm.bannedPlaceholder")}
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            Words that make you cringe — your agent will avoid them. Separate with
-            commas.
+            {t("profileForm.bannedHint")}
           </p>
         </div>
       </div>
@@ -360,23 +357,23 @@ export function BrandProfileForm({ initialProfile }: Props) {
       {/* Example content */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold">Show it your work</h2>
+          <h2 className="text-base font-semibold">{t("profileForm.exampleTitle")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            The fastest way to teach your agent — let it study your best posts.
+            {t("profileForm.exampleSubtitle")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="examplePosts">Paste 1–3 posts you&apos;re proud of</Label>
+          <Label htmlFor="examplePosts">{t("profileForm.examplePostsLabel")}</Label>
           <Textarea
             id="examplePosts"
             value={examplePosts}
             onChange={(e) => setExamplePosts(e.target.value.slice(0, 4000))}
-            placeholder={"Paste a caption, post, or script that really sounds like you.\n\nSeparate multiple examples with a blank line."}
+            placeholder={t("profileForm.examplePostsPlaceholder")}
             className="min-h-[140px]"
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            Your agent studies these to match your rhythm, humor, and word choice.
+            {t("profileForm.examplePostsHint")}
           </p>
         </div>
       </div>
@@ -384,9 +381,11 @@ export function BrandProfileForm({ initialProfile }: Props) {
       {/* Platforms */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold">Where do you post the most?</h2>
+          <h2 className="text-base font-semibold">
+            {t("profileForm.platformsTitle")}
+          </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Tap the ones you actually use — the AI will focus on them.
+            {t("profileForm.platformsSubtitle")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -415,51 +414,49 @@ export function BrandProfileForm({ initialProfile }: Props) {
       {/* Content */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold">What do you talk about?</h2>
+          <h2 className="text-base font-semibold">{t("profileForm.contentTitle")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Your topics and the words that sound like you.
+            {t("profileForm.contentSubtitle")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="contentPillars">Your main topics</Label>
+          <Label htmlFor="contentPillars">{t("profileForm.pillarsLabel")}</Label>
           <Input
             id="contentPillars"
             value={contentPillars}
             onChange={(e) => setContentPillars(e.target.value)}
-            placeholder="e.g. Fitness tips, My daily routine, Client stories"
+            placeholder={t("profileForm.pillarsPlaceholder")}
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            The 3–5 subjects you keep coming back to. Separate them with commas.
+            {t("profileForm.pillarsHint")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="vocabulary">Words & phrases you love using</Label>
+          <Label htmlFor="vocabulary">{t("profileForm.vocabLabel")}</Label>
           <Input
             id="vocabulary"
             value={vocabulary}
             onChange={(e) => setVocabulary(e.target.value)}
-            placeholder="e.g. let's go, game changer, no fluff"
+            placeholder={t("profileForm.vocabPlaceholder")}
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            Your signature expressions — the AI will sprinkle them in naturally.
-            Separate them with commas.
+            {t("profileForm.vocabHint")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="notes">Anything else?</Label>
+          <Label htmlFor="notes">{t("profileForm.notesLabel")}</Label>
           <Textarea
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value.slice(0, 1000))}
-            placeholder="e.g. Never use hard-sell language. I always write in first person. Keep it positive."
+            placeholder={t("profileForm.notesPlaceholder")}
             className="min-h-[96px]"
             disabled={saving}
           />
           <p className="text-xs text-muted-foreground">
-            Imagine you hired someone to write your posts — what would you tell them
-            on day one?
+            {t("profileForm.notesHint")}
           </p>
         </div>
       </div>
@@ -468,10 +465,10 @@ export function BrandProfileForm({ initialProfile }: Props) {
         <Button type="submit" disabled={saving} className="w-full sm:w-auto">
           {saving ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("profileForm.saving")}
             </>
           ) : (
-            "Save Creator Agent"
+            t("profileForm.save")
           )}
         </Button>
         <Button
@@ -481,7 +478,7 @@ export function BrandProfileForm({ initialProfile }: Props) {
           disabled={saving}
           className="w-full sm:w-auto text-muted-foreground"
         >
-          <Eraser className="h-4 w-4" /> Reset all fields
+          <Eraser className="h-4 w-4" /> {t("profileForm.resetAll")}
         </Button>
       </div>
     </form>
