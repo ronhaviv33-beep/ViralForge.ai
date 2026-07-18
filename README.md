@@ -232,11 +232,19 @@ prisma/schema.prisma
 
 ## 🧭 What's next (post-MVP)
 
-- Email verification + password reset.
-- Swap custom auth for Supabase/Clerk if SSO is needed.
+Shipped since MVP:
+
+- ✅ Email verification + password reset.
+- ✅ Regenerate individual sections, with tone/length controls per section.
+- ✅ Creator Agent (evolved Brand Voice): profile, example content, prompt personalization.
+- ✅ Agent runtime tracking (AgentRun: model, tokens, estimated cost) + plan-based agent limits.
+- ✅ Stripe polish: cancel-at-period-end state, double-checkout guard, status badges.
+
+Still ahead:
+
 - Multi-brand workspaces for the Agency plan.
 - Direct publishing / scheduling integrations (Instagram, TikTok, X).
-- Regenerate individual sections; tone/length controls per section.
+- Swap custom auth for Supabase/Clerk if SSO is needed.
 - Move rate limiting + usage to Redis/Upstash for multi-instance scale.
 - Team collaboration & roles.
 - Analytics on generated content performance.

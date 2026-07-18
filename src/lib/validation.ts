@@ -70,6 +70,10 @@ export const regenerateSectionSchema = z.object({
   section: z.enum(REGENERATABLE_SECTIONS, {
     errorMap: () => ({ message: "Invalid section name." }),
   }),
+  /** Optional tone override for this section only. Falls back to the generation's tone. */
+  tone: z.enum(TONES).optional(),
+  /** Optional length adjustment relative to the current section content. */
+  length: z.enum(["shorter", "longer"]).optional(),
 });
 
 export const adminCreateUserSchema = z.object({

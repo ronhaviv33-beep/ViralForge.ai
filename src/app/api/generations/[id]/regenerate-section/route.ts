@@ -55,7 +55,7 @@ export async function POST(
     );
   }
 
-  const { section } = parsed.data;
+  const { section, tone: toneOverride, length: lengthAdjust } = parsed.data;
 
   // Load generation — userId filter enforces ownership.
   const generation = await prisma.generation.findFirst({
@@ -120,7 +120,8 @@ export async function POST(
         outputJson: pack,
       },
       brandContext,
-      contentLocale
+      contentLocale,
+      { toneOverride, lengthAdjust }
     ));
   } catch (err) {
     console.error("[regen-section] AI error", err);

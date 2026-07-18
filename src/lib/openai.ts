@@ -320,6 +320,13 @@ function buildRegenSystemPrompt(locale: Locale): string {
   ].join("\n");
 }
 
+export interface RegenOptions {
+  /** Overrides the generation's tone for this section only. */
+  toneOverride?: string;
+  /** Make the new version noticeably shorter or longer than the current one. */
+  lengthAdjust?: "shorter" | "longer";
+}
+
 function buildRegenUserPrompt(
   section: RegeneratableSection,
   context: {
@@ -328,15 +335,34 @@ function buildRegenUserPrompt(
     platforms: string[];
     outputJson: ContentPack;
   },
-  brandContext?: string | null
+  brandContext?: string | null,
+  options?: RegenOptions
 ): string {
   const lines: string[] = [
     `SECTION TO REGENERATE: ${SECTION_LABELS[section]}`,
     `TASK: ${SECTION_TASK[section]}`,
     "",
-    `TONE: ${context.tone}`,
+    `TONE: ${options?.toneOverride ?? context.tone}`,
     `PLATFORMS: ${context.platforms.join(", ")}`,
   ];
+
+  if (options?.lengthAdjust) {
+    const current = context.outputJson[section];
+    const serialized =
+      typeof current === "string" ? current : JSON.stringify(current);
+    lines.push(
+      "",
+      "CURRENT VERSION OF THIS SECTION:",
+      '"""',
+      serialized.slice(0, 1500),
+      '"""',
+      "",
+      options.lengthAdjust === "shorter"
+        ? "LENGTH: Make the new version noticeably SHORTER than the current version while keeping the core message."
+        : "LENGTH: Make the new version noticeably LONGER and more detailed than the current version while keeping the core message.",
+      "Keep any required item counts exactly as specified — adjust the length of each item, not the number of items."
+    );
+  }
 
   if (brandContext) {
     lines.push("", "BRAND VOICE:", brandContext);
@@ -377,7 +403,8 @@ export async function regenerateSection(
     outputJson: ContentPack;
   },
   brandContext?: string | null,
-  locale: Locale = "en"
+  locale: Locale = "en",
+  options?: RegenOptions
 ): Promise<{ value: unknown; meta: AiCallMeta }> {
   const openai = getClient();
 
@@ -396,7 +423,7 @@ export async function regenerateSection(
     temperature: 0.85,
     messages: [
       { role: "system", content: buildRegenSystemPrompt(locale) },
-      { role: "user", content: buildRegenUserPrompt(section, context, brandContext) },
+      { role: "user", content: buildRegenUserPrompt(section, context, brandContext, options) },
     ],
     response_format: {
       type: "json_schema",

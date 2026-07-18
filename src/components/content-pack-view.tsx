@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Download, FileText, FileType, RefreshCw } from "lucide-react";
+import { Download, FileText, FileType, RefreshCw, ChevronsUp, ChevronsDown } from "lucide-react";
 import { toast } from "sonner";
 import type { ContentPack } from "@/lib/content-types";
 import { SECTIONS } from "@/lib/content-types";
+import { TONES } from "@/lib/constants";
 import type { RegeneratableSection } from "@/lib/validation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -129,7 +132,10 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
     toast.success(t("contentPack.exported", { format }));
   }
 
-  async function handleRegenerate(section: keyof ContentPack) {
+  async function handleRegenerate(
+    section: keyof ContentPack,
+    options?: { tone?: string; length?: "shorter" | "longer" }
+  ) {
     if (!generationId || regenerating[section]) return;
 
     setRegenerating((prev) => ({ ...prev, [section]: true }));
@@ -139,7 +145,7 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ section }),
+          body: JSON.stringify({ section, ...options }),
         }
       );
       const data = await res.json();
@@ -208,26 +214,70 @@ export function ContentPackView({ pack, title, platforms, generationId }: Conten
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   {generationId && (
-                    <button
-                      onClick={() =>
-                        handleRegenerate(section.key as RegeneratableSection)
-                      }
-                      disabled={isRegenerating}
-                      title={t("contentPack.regenerateTitle", {
-                        label: sectionLabel(t, section.key),
-                      })}
-                      className={cn(
-                        "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors",
-                        "hover:bg-secondary hover:text-foreground disabled:opacity-40"
-                      )}
-                    >
-                      <RefreshCw
-                        className={cn(
-                          "h-3.5 w-3.5",
-                          isRegenerating && "animate-spin"
-                        )}
-                      />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          disabled={isRegenerating}
+                          title={t("contentPack.regenerateTitle", {
+                            label: sectionLabel(t, section.key),
+                          })}
+                          className={cn(
+                            "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors",
+                            "hover:bg-secondary hover:text-foreground disabled:opacity-40"
+                          )}
+                        >
+                          <RefreshCw
+                            className={cn(
+                              "h-3.5 w-3.5",
+                              isRegenerating && "animate-spin"
+                            )}
+                          />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleRegenerate(section.key as RegeneratableSection)
+                          }
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" /> Regenerate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleRegenerate(section.key as RegeneratableSection, {
+                              length: "shorter",
+                            })
+                          }
+                        >
+                          <ChevronsUp className="h-3.5 w-3.5" /> Make it shorter
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleRegenerate(section.key as RegeneratableSection, {
+                              length: "longer",
+                            })
+                          }
+                        >
+                          <ChevronsDown className="h-3.5 w-3.5" /> Make it longer
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Change tone</DropdownMenuLabel>
+                        {TONES.map((toneOption) => (
+                          <DropdownMenuItem
+                            key={toneOption}
+                            onClick={() =>
+                              handleRegenerate(
+                                section.key as RegeneratableSection,
+                                { tone: toneOption }
+                              )
+                            }
+                          >
+                            {toneOption}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                   <CopyButton value={sectionToText(section.key, currentPack)} />
                 </div>
