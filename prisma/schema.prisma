@@ -69,6 +69,7 @@ model Subscription {
   status               String
   plan                 Plan
   currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean  @default(false)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

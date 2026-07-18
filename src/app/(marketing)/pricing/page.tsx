@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { PricingTable } from "@/components/marketing/pricing-table";
+import { CheckoutToast } from "@/components/dashboard/checkout-toast";
 import { getCurrentUser } from "@/lib/auth";
 import type { PlanId } from "@/lib/plans";
 
@@ -31,6 +33,9 @@ export default async function PricingPage() {
   const user = await getCurrentUser();
   return (
     <div className="container py-20">
+      <Suspense>
+        <CheckoutToast />
+      </Suspense>
       <div className="mx-auto mb-14 max-w-2xl text-center">
         <h1 className="text-4xl font-bold sm:text-5xl">Pricing</h1>
         <p className="mt-4 text-muted-foreground">

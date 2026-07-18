@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   Sparkles,
   History,
@@ -15,6 +16,7 @@ import { PLANS, type PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { GenerationCard } from "@/components/dashboard/generation-card";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { CheckoutToast } from "@/components/dashboard/checkout-toast";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -85,6 +87,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <Suspense>
+        <CheckoutToast />
+      </Suspense>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold">

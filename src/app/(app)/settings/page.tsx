@@ -13,6 +13,34 @@ export const metadata: Metadata = {
   title: "Settings — ViralForge",
 };
 
+/** Human-readable subscription status + display color. */
+function statusInfo(
+  status: string | undefined,
+  cancelAtPeriodEnd: boolean
+): { label: string; className: string } | null {
+  if (!status) return null;
+  if ((status === "active" || status === "trialing") && cancelAtPeriodEnd) {
+    return {
+      label: "Cancels at period end",
+      className: "bg-amber-500/10 text-amber-500",
+    };
+  }
+  switch (status) {
+    case "active":
+      return { label: "Active", className: "bg-accent/10 text-accent" };
+    case "trialing":
+      return { label: "Trial", className: "bg-primary/10 text-primary" };
+    case "past_due":
+      return { label: "Past due", className: "bg-destructive/10 text-destructive" };
+    case "unpaid":
+      return { label: "Unpaid", className: "bg-destructive/10 text-destructive" };
+    case "canceled":
+      return { label: "Canceled", className: "bg-secondary text-muted-foreground" };
+    default:
+      return { label: status, className: "bg-secondary text-muted-foreground" };
+  }
+}
+
 export default async function SettingsPage() {
   const user = await requireUser();
   const plan = user.plan as PlanId;
@@ -24,6 +52,10 @@ export default async function SettingsPage() {
   });
 
   const stripeReady = isStripeConfigured();
+  const status =
+    plan !== "free" || subscription
+      ? statusInfo(subscription?.status, subscription?.cancelAtPeriodEnd ?? false)
+      : null;
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -73,6 +105,16 @@ export default async function SettingsPage() {
               {PLANS[plan].name} · ${PLANS[plan].price}/mo
             </span>
           </div>
+          {status && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Status</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}
+              >
+                {status.label}
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Usage this month</span>
             <span className="font-medium">
@@ -83,13 +125,22 @@ export default async function SettingsPage() {
           </div>
           {subscription?.currentPeriodEnd && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Renews</span>
+              <span className="text-muted-foreground">
+                {subscription.cancelAtPeriodEnd ? "Access until" : "Renews"}
+              </span>
               <span className="font-medium">
                 {subscription.currentPeriodEnd.toLocaleDateString(undefined, {
                   dateStyle: "medium",
                 })}
               </span>
             </div>
+          )}
+          {subscription?.cancelAtPeriodEnd && (
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-500">
+              Your subscription is set to cancel. You keep full access until the
+              date above, then you&apos;ll move to the Free plan. You can resume it
+              anytime from the billing portal.
+            </p>
           )}
         </div>
 

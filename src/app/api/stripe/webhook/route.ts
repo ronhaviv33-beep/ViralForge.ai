@@ -32,6 +32,7 @@ async function syncSubscription(sub: Stripe.Subscription) {
   const periodEnd = sub.current_period_end
     ? new Date(sub.current_period_end * 1000)
     : null;
+  const cancelAtPeriodEnd = Boolean(sub.cancel_at_period_end);
 
   await prisma.$transaction([
     prisma.subscription.upsert({
@@ -43,11 +44,13 @@ async function syncSubscription(sub: Stripe.Subscription) {
         status: sub.status,
         plan,
         currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd,
       },
       update: {
         status: sub.status,
         plan,
         currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd,
       },
     }),
     prisma.user.update({

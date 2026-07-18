@@ -39,6 +39,11 @@ export function PricingTable({ authed, currentPlan }: PricingTableProps) {
       if (!res.ok) {
         throw new Error(data.error || "Could not start checkout.");
       }
+      if (data.portal) {
+        toast.info(
+          data.message ?? "Opening the billing portal to change your plan…"
+        );
+      }
       window.location.href = data.url;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");

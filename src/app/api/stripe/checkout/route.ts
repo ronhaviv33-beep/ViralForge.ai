@@ -43,6 +43,27 @@ export async function POST(req: Request) {
   try {
     const stripe = getStripe();
 
+    // Guard: a user with a live subscription must change plans through the
+    // billing portal — a second checkout would create a second subscription
+    // and double-charge them.
+    const existingSub = await prisma.subscription.findFirst({
+      where: {
+        userId: user.id,
+        status: { in: ["active", "trialing", "past_due"] },
+      },
+    });
+    if (existingSub && user.stripeCustomerId) {
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${appUrl()}/settings`,
+      });
+      return NextResponse.json({
+        url: portal.url,
+        portal: true,
+        message: "You already have a subscription — manage it in the billing portal.",
+      });
+    }
+
     // Ensure the user has a Stripe customer.
     let customerId = user.stripeCustomerId;
     if (!customerId) {
