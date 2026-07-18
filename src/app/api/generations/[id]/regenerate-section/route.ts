@@ -6,6 +6,7 @@ import { regenerateSection } from "@/lib/openai";
 import { getBrandProfile, formatBrandProfileForPrompt } from "@/lib/brand-profile";
 import { ContentPackSchema } from "@/lib/content-types";
 import { rateLimit } from "@/lib/rate-limit";
+import { startAgentRun, completeAgentRun, failAgentRun } from "@/lib/agent-runs";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -75,9 +76,21 @@ export async function POST(
   const brandProfile = await getBrandProfile(user.id);
   const brandContext = formatBrandProfileForPrompt(brandProfile);
 
+  // Runtime tracking: only Creator Agent-assisted runs (i.e. profile applied).
+  // A null runId (no context, or tracking failure) makes the finalizers no-ops.
+  const runId = brandContext
+    ? await startAgentRun({
+        userId: user.id,
+        agentType: "creator_agent",
+        actionType: "regenerate_section",
+        generationId: id,
+      })
+    : null;
+
   let newValue: unknown;
+  let meta;
   try {
-    newValue = await regenerateSection(
+    ({ value: newValue, meta } = await regenerateSection(
       section,
       {
         inputText: generation.inputText,
@@ -86,9 +99,10 @@ export async function POST(
         outputJson: pack,
       },
       brandContext
-    );
+    ));
   } catch (err) {
     console.error("[regen-section] AI error", err);
+    await failAgentRun(runId, err instanceof Error ? err.message : "AI call failed");
     return NextResponse.json(
       { error: "We couldn't regenerate this section. Please try again." },
       { status: 502 }
@@ -99,6 +113,7 @@ export async function POST(
   const mergedResult = ContentPackSchema.safeParse({ ...pack, [section]: newValue });
   if (!mergedResult.success) {
     console.error("[regen-section] merged pack invalid", mergedResult.error);
+    await failAgentRun(runId, "AI output failed pack validation", meta);
     return NextResponse.json(
       { error: "The AI returned an unexpected format. Please try again." },
       { status: 502 }
@@ -112,11 +127,14 @@ export async function POST(
     });
   } catch (err) {
     console.error("[regen-section] persist error", err);
+    // The AI work itself succeeded (and cost was incurred) — record it.
+    await completeAgentRun(runId, meta);
     return NextResponse.json(
       { error: "Regenerated but failed to save. Please try again." },
       { status: 500 }
     );
   }
 
+  await completeAgentRun(runId, meta);
   return NextResponse.json({ section, value: mergedResult.data[section] });
 }
