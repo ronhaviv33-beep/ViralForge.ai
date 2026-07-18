@@ -19,12 +19,34 @@ export function PricingTable({ authed, currentPlan }: PricingTableProps) {
   const router = useRouter();
   const [loadingPlan, setLoadingPlan] = React.useState<PlanId | null>(null);
 
+  const onPaidPlan = Boolean(currentPlan && currentPlan !== "free");
+
   async function handleSelect(plan: PlanId) {
     if (!authed) {
       router.push(`/signup?plan=${plan}`);
       return;
     }
     if (plan === "free") {
+      if (onPaidPlan) {
+        // Downgrading to Free means canceling the paid subscription — that
+        // happens in the billing portal, not through checkout.
+        setLoadingPlan(plan);
+        try {
+          const res = await fetch("/api/stripe/portal", { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "Could not open billing portal.");
+          }
+          toast.info("Cancel your current plan in the billing portal to move to Free.");
+          window.location.href = data.url;
+        } catch (err) {
+          toast.error(
+            err instanceof Error ? err.message : "Something went wrong."
+          );
+          setLoadingPlan(null);
+        }
+        return;
+      }
       router.push("/dashboard");
       return;
     }
@@ -95,7 +117,11 @@ export function PricingTable({ authed, currentPlan }: PricingTableProps) {
               {loadingPlan === plan.id && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
-              {isCurrent ? "Current plan" : plan.cta}
+              {isCurrent
+                ? "Current plan"
+                : plan.id === "free" && authed && onPaidPlan
+                  ? "Downgrade"
+                  : plan.cta}
             </Button>
           </div>
         );

@@ -45,16 +45,21 @@ export async function POST(req: Request) {
 
     // Guard: a user with a live subscription must change plans through the
     // billing portal — a second checkout would create a second subscription
-    // and double-charge them.
+    // and double-charge them. "Live" means any state Stripe can still bill or
+    // resume; terminal states (canceled, incomplete, incomplete_expired) fall
+    // through to a normal fresh checkout.
     const existingSub = await prisma.subscription.findFirst({
       where: {
         userId: user.id,
-        status: { in: ["active", "trialing", "past_due"] },
+        status: { in: ["active", "trialing", "past_due", "unpaid", "paused"] },
       },
     });
-    if (existingSub && user.stripeCustomerId) {
+    if (existingSub) {
+      // The subscription row always carries its customer id — fall back to it
+      // so the guard can never be bypassed by a missing user.stripeCustomerId.
+      const portalCustomerId = user.stripeCustomerId ?? existingSub.stripeCustomerId;
       const portal = await stripe.billingPortal.sessions.create({
-        customer: user.stripeCustomerId,
+        customer: portalCustomerId,
         return_url: `${appUrl()}/settings`,
       });
       return NextResponse.json({
