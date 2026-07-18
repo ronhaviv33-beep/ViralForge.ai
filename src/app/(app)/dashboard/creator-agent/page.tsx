@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { Bot, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { getBrandProfile, type BrandProfile } from "@/lib/brand-profile";
+import { getAgentUsageStatus } from "@/lib/agent-limits";
 import { BrandProfileForm } from "@/components/dashboard/brand-profile-form";
 
 export const metadata = { title: "Creator Agent – ViralForge" };
@@ -35,7 +37,10 @@ function agentKnowledge(profile: BrandProfile | null): string[] {
 
 export default async function CreatorAgentPage() {
   const user = await requireUser();
-  const profile = await getBrandProfile(user.id);
+  const [profile, agentStatus] = await Promise.all([
+    getBrandProfile(user.id),
+    getAgentUsageStatus(user.id, user.plan),
+  ]);
   const knowledge = agentKnowledge(profile);
 
   return (
@@ -63,6 +68,37 @@ export default async function CreatorAgentPage() {
           later.
         </p>
       </div>
+
+      {/* Monthly usage */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/50 px-4 py-3 text-sm">
+        <span className="text-muted-foreground">
+          Creator Agent this month:{" "}
+          <span className="font-medium text-foreground">
+            {agentStatus.used} of {agentStatus.limit}
+          </span>{" "}
+          personalized generations used
+        </span>
+        {agentStatus.blocked ? (
+          <Link
+            href="/pricing"
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Upgrade to keep your style →
+          </Link>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            {agentStatus.remaining} remaining
+          </span>
+        )}
+      </div>
+
+      {agentStatus.blocked && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-muted-foreground">
+          {agentStatus.blockedReason === "limit"
+            ? "You've reached your Creator Agent limit for this month. Your content will still generate — just without your saved style. Upgrade to keep generating with it."
+            : "Creator Agent isn't available on your current plan. Upgrade to generate content with your saved style."}
+        </div>
+      )}
 
       {/* What the agent knows */}
       {knowledge.length > 0 && (

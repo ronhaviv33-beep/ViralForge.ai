@@ -17,6 +17,21 @@ function getClient(): OpenAI {
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
+/** Metadata about a completed AI call, for runtime tracking. Best-effort — fields are null when unavailable. */
+export interface AiCallMeta {
+  model: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}
+
+function extractMeta(completion: OpenAI.Chat.Completions.ChatCompletion): AiCallMeta {
+  return {
+    model: completion.model ?? null,
+    inputTokens: completion.usage?.prompt_tokens ?? null,
+    outputTokens: completion.usage?.completion_tokens ?? null,
+  };
+}
+
 /** Maps each platform name to its ContentPack field. */
 const PLATFORM_FIELD_MAP: Record<string, string> = {
   Instagram: "instagramCaption",
@@ -164,7 +179,7 @@ export async function generateContentPack(
   tone: string,
   platforms: string[],
   brandContext?: string | null
-): Promise<ContentPack> {
+): Promise<{ pack: ContentPack; meta: AiCallMeta }> {
   const openai = getClient();
   const schema = buildResponseSchema(platforms);
 
@@ -202,7 +217,7 @@ export async function generateContentPack(
     throw new Error("The AI output did not match the expected format.");
   }
 
-  return result.data;
+  return { pack: result.data, meta: extractMeta(completion) };
 }
 
 // ─── Single-section regeneration ────────────────────────────────────────────
@@ -331,7 +346,7 @@ export async function regenerateSection(
     outputJson: ContentPack;
   },
   brandContext?: string | null
-): Promise<unknown> {
+): Promise<{ value: unknown; meta: AiCallMeta }> {
   const openai = getClient();
 
   // Wrap the section's schema in a single-field object for strict JSON output.
@@ -374,7 +389,7 @@ export async function regenerateSection(
   const wrapper = parsed as { result?: unknown };
   if (wrapper.result === undefined) throw new Error("The AI response was missing the result field.");
 
-  return wrapper.result;
+  return { value: wrapper.result, meta: extractMeta(completion) };
 }
 
 /** Short title for a generation, derived from the input text. */

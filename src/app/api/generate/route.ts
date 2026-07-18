@@ -6,6 +6,8 @@ import { generateContentPack, deriveTitle } from "@/lib/openai";
 import { getUsageStatus, incrementUsage } from "@/lib/usage";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBrandProfile, formatBrandProfileForPrompt } from "@/lib/brand-profile";
+import { startAgentRun, completeAgentRun, failAgentRun } from "@/lib/agent-runs";
+import { getAgentUsageStatus } from "@/lib/agent-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -58,13 +60,37 @@ export async function POST(req: Request) {
   const { text, tone, platforms } = parsed.data;
 
   const brandProfile = await getBrandProfile(user.id);
-  const brandContext = formatBrandProfileForPrompt(brandProfile);
+  let brandContext = formatBrandProfileForPrompt(brandProfile);
+
+  // Plan gating: if the Creator Agent is blocked (plan or monthly limit),
+  // generation proceeds normally — just without personalization. Never turn a
+  // working generation into a hard failure over agent limits.
+  let agentBlockedReason: "plan" | "limit" | null = null;
+  if (brandContext) {
+    const agentStatus = await getAgentUsageStatus(user.id, user.plan);
+    if (agentStatus.blocked) {
+      brandContext = null;
+      agentBlockedReason = agentStatus.blockedReason;
+    }
+  }
+
+  // Runtime tracking: only Creator Agent-assisted runs (i.e. profile applied).
+  // A null runId (no context, or tracking failure) makes the finalizers no-ops.
+  const runId = brandContext
+    ? await startAgentRun({
+        userId: user.id,
+        agentType: "creator_agent",
+        actionType: "generate_pack",
+      })
+    : null;
 
   let pack;
+  let meta;
   try {
-    pack = await generateContentPack(text, tone, platforms, brandContext);
+    ({ pack, meta } = await generateContentPack(text, tone, platforms, brandContext));
   } catch (err) {
     console.error("[generate] AI error", err);
+    await failAgentRun(runId, err instanceof Error ? err.message : "AI call failed");
     const message =
       err instanceof Error && err.message.startsWith("OPENAI")
         ? "AI service is not configured. Please contact support."
@@ -87,9 +113,19 @@ export async function POST(req: Request) {
     // Only count successful, persisted generations against the quota.
     await incrementUsage(user.id);
 
-    return NextResponse.json({ id: generation.id, output: pack });
+    await completeAgentRun(runId, { generationId: generation.id, ...meta });
+
+    return NextResponse.json({
+      id: generation.id,
+      output: pack,
+      agentApplied: Boolean(brandContext),
+      agentBlockedReason,
+    });
   } catch (err) {
     console.error("[generate] persist error", err);
+    // The AI work itself succeeded (and cost was incurred) — record it as a
+    // successful run without a generation link.
+    await completeAgentRun(runId, meta);
     return NextResponse.json(
       { error: "Generated, but failed to save. Please try again." },
       { status: 500 }
